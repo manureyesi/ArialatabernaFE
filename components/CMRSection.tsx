@@ -28,7 +28,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     onExit 
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [auth, setAuth] = useState<BasicAuth | null>(null);
@@ -86,6 +86,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newItemWinery, setNewItemWinery] = useState('');
   const [newItemWinemaker, setNewItemWinemaker] = useState('');
   const [newItemGrapes, setNewItemGrapes] = useState('');
+  const [newItemRegion, setNewItemRegion] = useState('');
+  const [newItemGlassPrice, setNewItemGlassPrice] = useState('');
+  const [newItemBottlePrice, setNewItemBottlePrice] = useState('');
   const [newItemWineType, setNewItemWineType] = useState<'Blanco' | 'Tinto' | 'Doce' | 'Espumoso'>('Blanco');
 
   // --- EVENT MANAGEMENT STATE ---
@@ -119,6 +122,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     setNewItemWinery('');
     setNewItemWinemaker('');
     setNewItemGrapes('');
+    setNewItemRegion('');
+    setNewItemGlassPrice('');
+    setNewItemBottlePrice('');
     setNewItemWineType('Blanco');
     setNewItemImage('');
     setNewItemAvailable(true);
@@ -315,10 +321,18 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       e.preventDefault();
       if (!auth) return;
 
+      const editList = menuType === 'food' ? foodMenu : wineMenu;
+      const editItem = editMenuIndex !== null ? editList[editMenuIndex] : null;
+
+      const basePrice =
+        menuType === 'wine'
+          ? Number(newItemBottlePrice || newItemGlassPrice || 0)
+          : parseFloat(newItemPrice);
+
       const newItem: MenuItem = {
           name: newItemName,
           description: newItemDesc,
-          price: parseFloat(newItemPrice),
+          price: basePrice,
           category: newItemCategory || (menuType === 'food' ? 'Novos' : 'Rias Baixas'),
           tags: [],
           available: newItemAvailable,
@@ -326,26 +340,55 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           winery: menuType === 'wine' ? newItemWinery : undefined,
           winemaker: menuType === 'wine' ? newItemWinemaker : undefined,
           grapes: menuType === 'wine' ? newItemGrapes : undefined,
+          region: menuType === 'wine' ? (newItemRegion.trim() ? newItemRegion.trim() : null) : undefined,
+          glassPrice: menuType === 'wine' ? (newItemGlassPrice.trim() ? Number(newItemGlassPrice) : null) : undefined,
+          bottlePrice: menuType === 'wine' ? (newItemBottlePrice.trim() ? Number(newItemBottlePrice) : null) : undefined,
           wineType: menuType === 'wine' ? newItemWineType : undefined,
       };
 
       try {
-        if (menuType === 'food') {
-          await backendApi.admin.createFood(auth, {
-            name: newItem.name,
-            description: newItem.description,
-            price: newItem.price,
-            imageUrl: newItemImage || undefined,
-          });
+        if (editItem?.id) {
+          if (menuType === 'food') {
+            await backendApi.admin.updateMenuItem(auth, editItem.id, {
+              name: newItem.name,
+              description: newItem.description,
+              price: newItem.price,
+              imageUrl: newItemImage || null,
+              isActive: newItemAvailable,
+            });
+          } else {
+            await backendApi.admin.updateMenuItem(auth, editItem.id, {
+              name: newItem.name,
+              description: newItem.description,
+              category: newItem.category,
+              region: newItem.region ?? null,
+              glassPrice: newItem.glassPrice ?? null,
+              bottlePrice: newItem.bottlePrice ?? null,
+              imageUrl: newItemImage || null,
+              isActive: newItemAvailable,
+            });
+          }
         } else {
-          await backendApi.admin.createWine(auth, {
-            name: newItem.name,
-            description: newItem.description,
-            category: newItem.category,
-            imageUrl: newItemImage || undefined,
-            region: undefined,
-            bottlePrice: newItem.price,
-          });
+          if (menuType === 'food') {
+            await backendApi.admin.createFood(auth, {
+              name: newItem.name,
+              description: newItem.description,
+              price: newItem.price,
+              imageUrl: newItemImage || undefined,
+              isActive: newItemAvailable,
+            });
+          } else {
+            await backendApi.admin.createWine(auth, {
+              name: newItem.name,
+              description: newItem.description,
+              category: newItem.category,
+              region: newItem.region ?? null,
+              glassPrice: newItem.glassPrice ?? null,
+              bottlePrice: newItem.bottlePrice ?? null,
+              imageUrl: newItemImage || undefined,
+              isActive: newItemAvailable,
+            });
+          }
         }
 
         const menu = await backendApi.getMenu();
@@ -369,6 +412,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             description: i.description || '',
             image: i.imageUrl || undefined,
             price: i.bottlePrice ?? i.glassPrice ?? 0,
+            region: i.region ?? null,
+            glassPrice: i.glassPrice ?? null,
+            bottlePrice: i.bottlePrice ?? null,
             available: i.isActive ?? true,
           }))
         );
@@ -396,13 +442,20 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       const item = list[index];
       setNewItemName(item.name);
       setNewItemDesc(item.description);
-      setNewItemPrice(item.price.toString());
+      if (menuType === 'wine') {
+        setNewItemPrice(String(item.bottlePrice ?? item.glassPrice ?? item.price));
+      } else {
+        setNewItemPrice(item.price.toString());
+      }
       setNewItemCategory(item.category);
       setNewItemImage(item.image || '');
       setNewItemAvailable(item.available);
       setNewItemWinery(item.winery || '');
       setNewItemWinemaker(item.winemaker || '');
       setNewItemGrapes(item.grapes || '');
+      setNewItemRegion(String(item.region ?? ''));
+      setNewItemGlassPrice(item.glassPrice === null || item.glassPrice === undefined ? '' : String(item.glassPrice));
+      setNewItemBottlePrice(item.bottlePrice === null || item.bottlePrice === undefined ? '' : String(item.bottlePrice));
       setNewItemWineType(item.wineType || 'Blanco');
       setEditMenuIndex(index);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -462,7 +515,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
   const resetMenuForm = () => {
       setNewItemName(''); setNewItemDesc(''); setNewItemPrice(''); setNewItemCategory('');
-      setNewItemWinery(''); setNewItemWinemaker(''); setNewItemGrapes(''); setNewItemWineType('Blanco');
+      setNewItemWinery(''); setNewItemWinemaker(''); setNewItemGrapes('');
+      setNewItemRegion(''); setNewItemGlassPrice(''); setNewItemBottlePrice('');
+      setNewItemWineType('Blanco');
       setNewItemImage(''); setNewItemAvailable(true);
       setEditMenuIndex(null);
   };
@@ -698,6 +753,13 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                         <option value="">Selecciona D.O.</option>
                         {WINE_DO_ORDER.map(doName => <option key={doName} value={doName}>{doName}</option>)}
                       </select>
+                      <input
+                        type="text"
+                        placeholder="Rexión (opcional)"
+                        value={newItemRegion}
+                        onChange={e => setNewItemRegion(e.target.value)}
+                        className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
+                      />
                       <select value={newItemWineType} onChange={e => setNewItemWineType(e.target.value as any)} className="border p-2 rounded text-sm w-full text-black">
                         <option value="Blanco">Blanco</option>
                         <option value="Tinto">Tinto</option>
@@ -710,7 +772,28 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                   )}
 
                   <input type="text" placeholder="Descrición / Notas" required value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
-                  <input type="number" placeholder="Prezo (€)" step="0.1" required value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
+                  {menuType === 'wine' ? (
+                    <>
+                      <input
+                        type="number"
+                        placeholder="Prezo Copa (€)"
+                        step="0.1"
+                        value={newItemGlassPrice}
+                        onChange={e => setNewItemGlassPrice(e.target.value)}
+                        className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Prezo Botella (€)"
+                        step="0.1"
+                        value={newItemBottlePrice}
+                        onChange={e => setNewItemBottlePrice(e.target.value)}
+                        className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
+                      />
+                    </>
+                  ) : (
+                    <input type="number" placeholder="Prezo (€)" step="0.1" required value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
+                  )}
                   
                   {/* Image Upload for Menu Item */}
                   <div className="flex flex-col gap-1 w-full">
@@ -804,7 +887,26 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                                 <div className="text-gray-600 text-[11px] mt-0.5">{item.description}</div>
                               </td>
                               <td className="px-6 py-3 text-gray-600 font-medium">{item.category}</td>
-                              <td className="px-6 py-3 text-black font-bold">{item.price.toFixed(2)}€</td>
+                              <td className="px-6 py-3 text-black font-bold">
+                                {menuType === 'wine' ? (
+                                  <div className="flex flex-col items-end">
+                                    {item.glassPrice !== null && item.glassPrice !== undefined && (
+                                      <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+                                        Copa {Number(item.glassPrice).toFixed(2)}€
+                                      </div>
+                                    )}
+                                    {item.bottlePrice !== null && item.bottlePrice !== undefined && (
+                                      <div>{Number(item.bottlePrice).toFixed(2)}€</div>
+                                    )}
+                                    {(item.glassPrice === null || item.glassPrice === undefined) &&
+                                      (item.bottlePrice === null || item.bottlePrice === undefined) && (
+                                        <div>{item.price.toFixed(2)}€</div>
+                                      )}
+                                  </div>
+                                ) : (
+                                  <>{item.price.toFixed(2)}€</>
+                                )}
+                              </td>
                               <td className="px-6 py-3 text-right">
                                   <div className="flex justify-end gap-3">
                                     <button onClick={() => handleEditMenuItem(idx)} className="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase">Editar</button>

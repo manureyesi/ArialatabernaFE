@@ -25,6 +25,9 @@ export interface MenuItem {
   winery?: string;
   winemaker?: string;
   grapes?: string;
+  region?: string | null;
+  glassPrice?: number | null;
+  bottlePrice?: number | null;
   wineType?: 'Blanco' | 'Tinto' | 'Doce' | 'Espumoso';
 }
 

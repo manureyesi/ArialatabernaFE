@@ -209,6 +209,8 @@ export const backendApi = {
     setConfig: (auth: BasicAuth, key: string, value: string) =>
       request<{ key: string; value: string }>(`/admin/config/${encodeURIComponent(key)}`, 'PUT', { key, value }, auth),
     deleteMenuItem: (auth: BasicAuth, itemId: string) => request<void>(`/admin/menu/${encodeURIComponent(itemId)}`, 'DELETE', undefined, auth),
+    updateMenuItem: (auth: BasicAuth, itemId: string, payload: Record<string, unknown>) =>
+      request<void>(`/admin/menu/${encodeURIComponent(itemId)}`, 'PUT', payload, auth),
     listProjectContacts: (auth: BasicAuth, limit = 100, offset = 0) =>
       request<BackendAdminProjectContactListResponse>(
         `/admin/contacts/projects?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
@@ -227,11 +229,20 @@ export const backendApi = {
     deleteEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}`, 'DELETE', undefined, auth),
     publishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/publish`, 'POST', undefined, auth),
     unpublishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/unpublish`, 'POST', undefined, auth),
-    createFood: (auth: BasicAuth, payload: { name: string; description?: string; price?: number; imageUrl?: string }) =>
+    createFood: (auth: BasicAuth, payload: { name: string; description?: string; price?: number; imageUrl?: string; isActive?: boolean }) =>
       request<{ id: string }>('/admin/menu/food', 'POST', payload, auth),
     createWine: (
       auth: BasicAuth,
-      payload: { name: string; description?: string; category?: string; region?: string; glassPrice?: number; bottlePrice?: number; imageUrl?: string }
+      payload: {
+        name: string;
+        description?: string;
+        category?: string;
+        region?: string | null;
+        glassPrice?: number | null;
+        bottlePrice?: number | null;
+        imageUrl?: string;
+        isActive?: boolean;
+      }
     ) => {
       return request<{ id: string }>('/admin/menu/wines', 'POST', payload, auth);
     },

@@ -79,6 +79,9 @@ const App: React.FC = () => {
             description: i.description || '',
             image: i.imageUrl || undefined,
             price: i.bottlePrice ?? i.glassPrice ?? 0,
+            region: i.region ?? null,
+            glassPrice: i.glassPrice ?? null,
+            bottlePrice: i.bottlePrice ?? null,
             available: i.isActive ?? true,
           }))
         );

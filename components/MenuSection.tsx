@@ -48,6 +48,8 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems }) => {
 
   const renderItem = (item: MenuItem, index: number, type: 'food' | 'wine') => {
     const hasImage = !!item.image;
+    const wineBottle = type === 'wine' ? item.bottlePrice : null;
+    const wineGlass = type === 'wine' ? item.glassPrice : null;
 
     return (
       <div 
@@ -72,13 +74,35 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems }) => {
               </span>
             )}
           </h4>
-          <span className="text-sm font-bold ml-2 whitespace-nowrap text-black">{item.price.toFixed(2)}€</span>
+          {type === 'wine' ? (
+            <span className="text-[10px] font-bold ml-2 whitespace-nowrap text-black uppercase tracking-widest text-right">
+              {wineGlass !== null && wineGlass !== undefined && (
+                <span>Copa {Number(wineGlass).toFixed(2)}€</span>
+              )}
+              {wineBottle !== null && wineBottle !== undefined && (
+                <span>
+                  {wineGlass !== null && wineGlass !== undefined ? ' · ' : ''}
+                  Botella {Number(wineBottle).toFixed(2)}€
+                </span>
+              )}
+              {(wineGlass === null || wineGlass === undefined) && (wineBottle === null || wineBottle === undefined) && (
+                <span>{item.price.toFixed(2)}€</span>
+              )}
+            </span>
+          ) : (
+            <span className="text-sm font-bold ml-2 whitespace-nowrap text-black">{item.price.toFixed(2)}€</span>
+          )}
         </div>
         
         <div className="pr-2 space-y-1">
            {type === 'wine' && (item.winery || item.winemaker) && (
              <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
                {item.winery} {item.winemaker && `— ${item.winemaker}`}
+             </p>
+           )}
+           {type === 'wine' && item.region && (
+             <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+               {item.region}
              </p>
            )}
            {type === 'wine' && item.grapes && (
@@ -221,8 +245,34 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems }) => {
                 <span className="text-[#4a5d23] font-bold text-xs uppercase tracking-[0.3em] mb-4 block">{selectedItem.category}</span>
                 <h3 className="text-3xl font-black mb-4 uppercase tracking-tighter leading-tight border-b border-gray-100 pb-4">{selectedItem.name}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed mb-8 italic">{selectedItem.description}</p>
+                {(selectedItem.region || selectedItem.winery || selectedItem.winemaker || selectedItem.grapes) && (
+                  <div className="text-[11px] text-gray-600 mb-8 space-y-1">
+                    {selectedItem.region && <div className="uppercase font-bold tracking-widest text-gray-500">{selectedItem.region}</div>}
+                    {(selectedItem.winery || selectedItem.winemaker) && (
+                      <div className="uppercase font-bold tracking-widest text-gray-500">
+                        {selectedItem.winery} {selectedItem.winemaker && `— ${selectedItem.winemaker}`}
+                      </div>
+                    )}
+                    {selectedItem.grapes && (
+                      <div className="italic">
+                        <span className="font-bold not-italic">Uvas:</span> {selectedItem.grapes}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex justify-between items-center mt-auto pt-6 border-t border-gray-50">
-                   <span className="text-2xl font-black text-black">{selectedItem.price.toFixed(2)}€</span>
+                   <span className="text-2xl font-black text-black">
+                     {selectedItem.glassPrice !== null && selectedItem.glassPrice !== undefined && (
+                       <span className="mr-4">Copa {Number(selectedItem.glassPrice).toFixed(2)}€</span>
+                     )}
+                     {selectedItem.bottlePrice !== null && selectedItem.bottlePrice !== undefined && (
+                       <span>Botella {Number(selectedItem.bottlePrice).toFixed(2)}€</span>
+                     )}
+                     {(selectedItem.glassPrice === null || selectedItem.glassPrice === undefined) &&
+                       (selectedItem.bottlePrice === null || selectedItem.bottlePrice === undefined) && (
+                         <span>{selectedItem.price.toFixed(2)}€</span>
+                       )}
+                   </span>
                    <div className="flex gap-2">
                      {selectedItem.tags?.map(t => (
                        <span key={t} className="text-[9px] uppercase font-bold tracking-widest text-gray-400">{t}</span>
