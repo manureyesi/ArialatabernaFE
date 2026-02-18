@@ -10,6 +10,7 @@ import CookieBanner from './components/CookieBanner';
 import Logo from './components/Logo';
 import { Section, MenuItem, EventItem, Reservation, ProjectProposal } from './types';
 import { FOOD_MENU, WINE_MENU, EVENTS } from './constants';
+import { backendApi } from './services/backendApi';
 
 const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<Section>(Section.HOME);
@@ -22,6 +23,41 @@ const App: React.FC = () => {
   const [events, setEvents] = useState<EventItem[]>(EVENTS);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [proposals, setProposals] = useState<ProjectProposal[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    backendApi
+      .getMenu()
+      .then((menu) => {
+        if (cancelled) return;
+        setFoodMenu(
+          menu.food.map((i) => ({
+            category: 'A Cociña',
+            name: i.name,
+            description: i.description || '',
+            price: i.price ?? 0,
+            available: i.isActive ?? true,
+            tags: i.tags || [],
+          }))
+        );
+        setWineMenu(
+          menu.wines.map((i) => ({
+            category: i.category || 'Outros',
+            name: i.name,
+            description: i.description || '',
+            price: i.bottlePrice ?? i.glassPrice ?? 0,
+            available: i.isActive ?? true,
+          }))
+        );
+      })
+      .catch(() => {
+        // keep local constants as fallback
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -42,52 +78,81 @@ const App: React.FC = () => {
   const [formObservations, setFormObservations] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
 
-  const availableTimes = useMemo(() => {
-    if (!formDate) return [];
-    const date = new Date(formDate);
-    const day = date.getDay();
-    const generateSlots = (startH: number, startM: number, endH: number, endM: number) => {
-      const slots = [];
-      let current = new Date();
-      current.setHours(startH, startM, 0, 0);
-      const end = new Date();
-      end.setHours(endH, endM, 0, 0);
-      while (current <= end) {
-        slots.push(current.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }));
-        current.setMinutes(current.getMinutes() + 30);
-      }
-      return slots;
-    };
-    if (day >= 2 && day <= 4) return generateSlots(20, 0, 22, 30);
-    else if (day === 5 || day === 6) return [...generateSlots(13, 0, 15, 30), ...generateSlots(20, 0, 23, 15)];
-    else if (day === 0) return [...generateSlots(13, 0, 15, 30), ...generateSlots(20, 0, 22, 30)];
-    return [];
-  }, [formDate]);
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
 
-  const handleReservationSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!formDate) {
+      setAvailableTimes([]);
+      setFormTime('');
+      return;
+    }
+
+    setIsLoadingAvailability(true);
+    backendApi
+      .getAvailability(formDate, formGuests)
+      .then((res) => {
+        setAvailableTimes(res.slots.filter((s) => s.available).map((s) => s.time));
+      })
+      .catch(() => {
+        setAvailableTimes([]);
+      })
+      .finally(() => setIsLoadingAvailability(false));
+  }, [formDate, formGuests]);
+
+  const handleReservationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newRes: Reservation = {
-      id: Date.now().toString(),
-      date: formDate,
-      time: formTime,
-      guests: formGuests,
-      name: formName,
-      email: formEmail,
-      phone: formPhone,
-      observations: formObservations,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-    setReservations(prev => [newRes, ...prev]);
-    setFormSuccess(true);
-    setTimeout(() => {
+    try {
+      const out = await backendApi.createReservation({
+        date: formDate,
+        time: formTime,
+        partySize: formGuests,
+        customer: { name: formName, email: formEmail, phone: formPhone },
+        notes: formObservations,
+      });
+
+      const newRes: Reservation = {
+        id: out.id,
+        date: out.date,
+        time: out.time,
+        guests: out.partySize,
+        name: out.customer.name,
+        email: out.customer.email || formEmail,
+        phone: out.customer.phone || formPhone,
+        observations: out.notes || undefined,
+        status: 'pending',
+        createdAt: out.createdAt,
+      };
+
+      setReservations((prev) => [newRes, ...prev]);
+      setFormSuccess(true);
+      setTimeout(() => {
+        setFormSuccess(false);
+        setFormName('');
+        setFormEmail('');
+        setFormPhone('');
+        setFormObservations('');
+        setFormDate('');
+        setFormTime('');
+      }, 5000);
+    } catch {
       setFormSuccess(false);
-      setFormName(''); setFormEmail(''); setFormPhone(''); setFormObservations(''); setFormDate(''); setFormTime('');
-    }, 5000);
+    }
   };
 
   const handleProposalSubmit = (p: ProjectProposal) => {
     setProposals(prev => [p, ...prev]);
+    backendApi.contactProjects({
+      name: p.name,
+      email: p.email,
+      phone: p.phone,
+      subject: p.title,
+      message: `${p.description}\n\n${p.bio}\n\n${p.socials}`,
+      consent: true,
+      source: 'website',
+    }).catch(() => {
+      // ignore UI errors for now
+    });
   };
 
   if (activeSection === Section.CMR) {
@@ -244,8 +309,8 @@ const App: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Hora</label>
-                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!formDate || availableTimes.length === 0}>
-                              <option value="">{formDate ? (availableTimes.length > 0 ? 'Escoller' : 'Non dispoñible') : '—'}</option>
+                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!formDate || isLoadingAvailability || availableTimes.length === 0}>
+                              <option value="">{formDate ? (isLoadingAvailability ? 'Cargando...' : (availableTimes.length > 0 ? 'Escoller' : 'Non dispoñible')) : '—'}</option>
                               {availableTimes.map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
                         </div>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Reservation, MenuItem, EventItem, ProjectProposal, EventCategory } from '../types';
 import { COLORS, WINE_DO_ORDER } from '../constants';
+import { backendApi, BasicAuth } from '../services/backendApi';
 
 interface CMRSectionProps {
   reservations: Reservation[];
@@ -27,8 +28,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     onExit 
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [auth, setAuth] = useState<BasicAuth | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'reservations' | 'customers' | 'menu' | 'events' | 'proposals'>('dashboard');
 
   // --- MENU MANAGEMENT STATE ---
@@ -69,13 +72,17 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       return reservations.find(r => r.email === email);
     }).filter(Boolean) as Reservation[];
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.toLowerCase() === 'taberna' || password === 'admin') {
+    const nextAuth = { username, password };
+    try {
+      await backendApi.admin.listConfig(nextAuth);
+      setAuth(nextAuth);
       setIsAuthenticated(true);
       setError('');
-    } else {
-      setError('Contrasinal incorrecto');
+    } catch {
+      setAuth(null);
+      setError('Credenciais incorrectas');
     }
   };
 
@@ -90,8 +97,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     }
   };
 
-  const handleSaveMenuItem = (e: React.FormEvent) => {
+  const handleSaveMenuItem = async (e: React.FormEvent) => {
       e.preventDefault();
+      if (!auth) return;
+
       const newItem: MenuItem = {
           name: newItemName,
           description: newItemDesc,
@@ -106,24 +115,48 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           wineType: menuType === 'wine' ? newItemWineType : undefined,
       };
 
-      if (menuType === 'food') {
-          if (editMenuIndex !== null) {
-              const updated = [...foodMenu];
-              updated[editMenuIndex] = newItem;
-              setFoodMenu(updated);
-          } else {
-              setFoodMenu([...foodMenu, newItem]);
-          }
-      } else {
-          if (editMenuIndex !== null) {
-              const updated = [...wineMenu];
-              updated[editMenuIndex] = newItem;
-              setWineMenu(updated);
-          } else {
-              setWineMenu([...wineMenu, newItem]);
-          }
+      try {
+        if (menuType === 'food') {
+          await backendApi.admin.createFood(auth, {
+            name: newItem.name,
+            description: newItem.description,
+            price: newItem.price,
+          });
+        } else {
+          await backendApi.admin.createWine(auth, {
+            name: newItem.name,
+            description: newItem.description,
+            category: newItem.category,
+            region: undefined,
+            bottlePrice: newItem.price,
+          });
+        }
+
+        const menu = await backendApi.getMenu();
+        setFoodMenu(
+          menu.food.map((i) => ({
+            category: 'A Cociña',
+            name: i.name,
+            description: i.description || '',
+            price: i.price ?? 0,
+            available: i.isActive ?? true,
+            tags: i.tags || [],
+          }))
+        );
+        setWineMenu(
+          menu.wines.map((i) => ({
+            category: i.category || 'Outros',
+            name: i.name,
+            description: i.description || '',
+            price: i.bottlePrice ?? i.glassPrice ?? 0,
+            available: i.isActive ?? true,
+          }))
+        );
+
+        resetMenuForm();
+      } catch {
+        // keep form state
       }
-      resetMenuForm();
   };
 
   const handleToggleAvailability = (index: number) => {
@@ -539,6 +572,16 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         <div className="bg-white p-8 rounded-lg shadow-xl w-full max-md border border-gray-200">
           <h2 className="text-2xl font-bold mb-6 text-center uppercase tracking-tighter text-black">Acceso CMR</h2>
           <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Usuario</label>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="w-full border p-3 rounded focus:outline-none focus:ring-2 focus:ring-[#4a5d23] text-black"
+                placeholder="admin"
+              />
+            </div>
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Contrasinal</label>
               <input 
