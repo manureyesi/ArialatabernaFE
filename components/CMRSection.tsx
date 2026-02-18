@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Reservation, MenuItem, EventItem, ProjectProposal, EventCategory } from '../types';
 import { COLORS, WINE_DO_ORDER } from '../constants';
 import { backendApi, BasicAuth } from '../services/backendApi';
@@ -68,6 +68,99 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const today = new Date().toISOString().split('T')[0];
   const todayReservations = reservations.filter(r => r.date === today && r.status === 'confirmed').length;
   const newProposalsCount = proposals.filter(p => p.status === 'new').length;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    setNewItemName('');
+    setNewItemDesc('');
+    setNewItemPrice('');
+    setNewItemCategory('');
+    setNewItemWinery('');
+    setNewItemWinemaker('');
+    setNewItemGrapes('');
+    setNewItemWineType('Blanco');
+    setNewItemImage('');
+    setNewItemAvailable(true);
+    setEditMenuIndex(null);
+
+    setNewEventTitle('');
+    setNewEventDateStart('');
+    setNewEventDateEnd('');
+    setNewEventTimezone('Europe/Madrid');
+    setNewEventDesc('');
+    setNewEventImage('');
+    setNewEventLocationName('');
+    setNewEventIsPublished(true);
+    setEditEventId(null);
+
+    if (!auth) return;
+
+    if (activeTab === 'menu') {
+      backendApi
+        .getMenu()
+        .then((menu) => {
+          setFoodMenu(
+            menu.food.map((i) => ({
+              id: i.id,
+              category: 'A Cociña',
+              name: i.name,
+              description: i.description || '',
+              price: i.price ?? 0,
+              available: i.isActive ?? true,
+              tags: i.tags || [],
+            }))
+          );
+          setWineMenu(
+            menu.wines.map((i) => ({
+              id: i.id,
+              category: i.category || 'Outros',
+              name: i.name,
+              description: i.description || '',
+              price: i.bottlePrice ?? i.glassPrice ?? 0,
+              available: i.isActive ?? true,
+            }))
+          );
+        })
+        .catch(() => {
+          // ignore
+        });
+    }
+
+    if (activeTab === 'events') {
+      backendApi.admin
+        .listEvents(auth)
+        .then((items) => {
+          setEvents(
+            items
+              .filter((it) => !!it.title)
+              .map((it) => {
+                const dt = it.dateStart ? new Date(it.dateStart) : null;
+                const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
+                const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+                return {
+                  id: it.id,
+                  title: it.title,
+                  date,
+                  time,
+                  description: it.description,
+                  image: it.imageUrl || 'https://picsum.photos/800/600?grayscale',
+                  category: (it.category as any) as EventItem['category'],
+                  dateStart: it.dateStart,
+                  dateEnd: it.dateEnd ?? null,
+                  timezone: it.timezone,
+                  locationName: it.locationName ?? null,
+                  isPublished: it.isPublished,
+                  imageUrl: it.imageUrl,
+                };
+              })
+          );
+        })
+        .catch(() => {
+          // ignore
+        });
+    }
+  }, [activeTab, auth, setEvents, setFoodMenu, setWineMenu]);
 
   // Unique customers logic
   const uniqueCustomers = Array.from(new Set(reservations.map(r => r.email)))
