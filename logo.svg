@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <style>
+      .text-main { font-family: 'Impact', 'Arial Black', sans-serif; font-size: 90px; letter-spacing: 2px; }
+      .text-sub { font-family: 'Impact', 'Arial Black', sans-serif; font-size: 55px; letter-spacing: 4px; }
+      .text-small { font-family: 'Century Gothic', 'Futura', sans-serif; font-size: 20px; letter-spacing: 2px; font-weight: 300; }
+    </style>
+  </defs>
+  
+  <!-- Sprout -->
+  <g transform="translate(250, 140)">
+    <!-- Ground Line -->
+    <path d="M-130,50 Q-50,60 0,50 Q50,40 130,50" fill="none" stroke="white" stroke-width="2" />
+    <!-- Root/Seed -->
+    <path d="M-2,50 L0,58 L2,50" fill="white" />
+    
+    <!-- Stem -->
+    <path d="M0,50 Q-5,25 0,0" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" />
+    
+    <!-- Left Leaf (Outline) -->
+    <path d="M0,10 Q-35,-25 -45,0 Q-20,25 0,10 Z" fill="none" stroke="white" stroke-width="2" />
+    <path d="M0,10 Q-20,0 -35,0" fill="none" stroke="white" stroke-width="1" />
+    
+    <!-- Right Leaf (Filled) -->
+    <g transform="rotate(-10)">
+        <path d="M0,5 Q35,-30 55,-5 Q30,35 0,5 Z" fill="#d4e157" stroke="white" stroke-width="2" />
+        <path d="M0,5 Q25,5 40,0" fill="none" stroke="black" stroke-width="1" opacity="0.5" />
+    </g>
+  </g>
+
+  <!-- Text -->
+  <text x="50%" y="270" text-anchor="middle" class="text-main" fill="white" transform="rotate(-2 250 270)">A RIALA</text>
+  
+  <g transform="translate(0, 330)">
+     <text x="50%" y="0" text-anchor="middle" class="text-sub" fill="white">TABERNA</text>
+     <!-- Diamonds -->
+     <rect x="130" y="-15" width="8" height="8" transform="rotate(45 130 -15)" fill="white" />
+     <rect x="370" y="-15" width="8" height="8" transform="rotate(45 370 -15)" fill="white" />
+  </g>
+
+  <text x="50%" y="400" text-anchor="middle" class="text-small" fill="white">ZONA DOS VIÑOS - A ESTRADA</text>
+</svg>
