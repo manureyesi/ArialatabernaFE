@@ -32,7 +32,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [auth, setAuth] = useState<BasicAuth | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'reservations' | 'customers' | 'menu' | 'events' | 'proposals'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'reservations' | 'customers' | 'menu' | 'events' | 'proposals' | 'config'>('dashboard');
 
   const [projectContacts, setProjectContacts] = useState<Array<{ id: string; name: string; email: string; phone?: string | null; company?: string | null; subject: string; message: string; consent?: boolean; source?: string | null; createdAt: string }>>([]);
   const [isLoadingProjectContacts, setIsLoadingProjectContacts] = useState(false);
@@ -48,6 +48,11 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     source?: string | null;
     createdAt: string;
   }>(null);
+
+  const [adminConfigItems, setAdminConfigItems] = useState<Array<{ key: string; value: string }>>([]);
+  const [adminConfigDraft, setAdminConfigDraft] = useState<Record<string, string>>({});
+  const [isLoadingAdminConfig, setIsLoadingAdminConfig] = useState(false);
+  const [savingConfigKey, setSavingConfigKey] = useState<string | null>(null);
 
   // --- MENU MANAGEMENT STATE ---
   const [menuType, setMenuType] = useState<'food' | 'wine'>('food');
@@ -192,6 +197,24 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         })
         .finally(() => {
           setIsLoadingProjectContacts(false);
+        });
+    }
+
+    if (activeTab === 'config') {
+      setIsLoadingAdminConfig(true);
+      backendApi.admin
+        .listConfig(auth)
+        .then((items) => {
+          const next = Array.isArray(items) ? items : [];
+          setAdminConfigItems(next);
+          setAdminConfigDraft(next.reduce((acc, it) => ({ ...acc, [it.key]: it.value }), {} as Record<string, string>));
+        })
+        .catch(() => {
+          setAdminConfigItems([]);
+          setAdminConfigDraft({});
+        })
+        .finally(() => {
+          setIsLoadingAdminConfig(false);
         });
     }
   }, [activeTab, auth, setEvents, setFoodMenu, setWineMenu]);
@@ -1010,6 +1033,107 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     </div>
   );
 
+  const renderConfigManagement = () => (
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-gray-400 font-bold">Configuración</div>
+          <div className="text-sm text-gray-600">Valores do sistema (ex: reserva-activa)</div>
+        </div>
+        <button
+          onClick={() => {
+            if (!auth) return;
+            setIsLoadingAdminConfig(true);
+            backendApi.admin
+              .listConfig(auth)
+              .then((items) => {
+                const next = Array.isArray(items) ? items : [];
+                setAdminConfigItems(next);
+                setAdminConfigDraft(next.reduce((acc, it) => ({ ...acc, [it.key]: it.value }), {} as Record<string, string>));
+              })
+              .catch(() => {
+                setAdminConfigItems([]);
+                setAdminConfigDraft({});
+              })
+              .finally(() => {
+                setIsLoadingAdminConfig(false);
+              });
+          }}
+          className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black"
+        >
+          Recargar
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+            <tr>
+              <th className="px-6 py-4">Key</th>
+              <th className="px-6 py-4">Value</th>
+              <th className="px-6 py-4 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {adminConfigItems.map((it) => (
+              <tr key={it.key} className="hover:bg-gray-50">
+                <td className="px-6 py-4 font-mono text-xs text-gray-700">{it.key}</td>
+                <td className="px-6 py-4">
+                  <input
+                    type="text"
+                    value={adminConfigDraft[it.key] ?? ''}
+                    onChange={(e) => setAdminConfigDraft((prev) => ({ ...prev, [it.key]: e.target.value }))}
+                    className="w-full border border-gray-200 rounded p-2 text-sm text-black"
+                  />
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button
+                    onClick={async () => {
+                      if (!auth) return;
+                      const nextValue = adminConfigDraft[it.key] ?? '';
+                      try {
+                        setSavingConfigKey(it.key);
+                        await backendApi.admin.setConfig(auth, it.key, nextValue);
+                        const items = await backendApi.admin.listConfig(auth);
+                        const next = Array.isArray(items) ? items : [];
+                        setAdminConfigItems(next);
+                        setAdminConfigDraft(next.reduce((acc, x) => ({ ...acc, [x.key]: x.value }), {} as Record<string, string>));
+                      } catch {
+                        // ignore
+                      } finally {
+                        setSavingConfigKey(null);
+                      }
+                    }}
+                    className="text-xs font-bold uppercase tracking-widest text-[#4a5d23] hover:text-green-800 disabled:opacity-30"
+                    disabled={savingConfigKey === it.key}
+                  >
+                    Gardar
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {isLoadingAdminConfig && (
+              <tr>
+                <td colSpan={3} className="px-6 py-8 text-center text-gray-400 italic">
+                  Cargando configuración...
+                </td>
+              </tr>
+            )}
+
+            {!isLoadingAdminConfig && adminConfigItems.length === 0 && (
+              <tr>
+                <td colSpan={3} className="px-6 py-8 text-center text-gray-400 italic">
+                  Non hai configuración dispoñible.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
@@ -1053,9 +1177,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           <button onClick={onExit} className="text-sm bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors uppercase tracking-widest">Saír á Web</button>
         </div>
         <div className="flex gap-6 border-b border-gray-300 mb-8 overflow-x-auto">
-          {['dashboard', 'reservations', 'proposals', 'customers', 'menu', 'events'].map(tab => (
+          {['dashboard', 'reservations', 'proposals', 'customers', 'menu', 'events', 'config'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab as any)} className={`pb-3 uppercase text-xs font-bold tracking-widest transition-colors whitespace-nowrap ${activeTab === tab ? 'border-b-2 border-[#4a5d23] text-[#4a5d23]' : 'text-gray-400 hover:text-gray-600'}`}>
-              {tab === 'dashboard' ? 'Panel Principal' : tab === 'reservations' ? 'Reservas' : tab === 'proposals' ? `Propostas (${projectContactsNewCount || newProposalsCount})` : tab === 'customers' ? 'Clientes' : tab === 'menu' ? 'Xestión Carta' : 'Xestión Eventos'}
+              {tab === 'dashboard' ? 'Panel Principal' : tab === 'reservations' ? 'Reservas' : tab === 'proposals' ? `Propostas (${projectContactsNewCount || newProposalsCount})` : tab === 'customers' ? 'Clientes' : tab === 'menu' ? 'Xestión Carta' : tab === 'events' ? 'Xestión Eventos' : 'Config'}
             </button>
           ))}
         </div>
@@ -1066,6 +1190,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             {activeTab === 'customers' && renderCustomers()}
             {activeTab === 'menu' && renderMenuManagement()}
             {activeTab === 'events' && renderEventManagement()}
+            {activeTab === 'config' && renderConfigManagement()}
         </div>
       </div>
     </div>

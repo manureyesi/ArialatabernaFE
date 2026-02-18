@@ -100,6 +100,15 @@ export type BackendPublicConfigItem = {
   value: string;
 };
 
+export type BackendAdminConfigItem = {
+  key: string;
+  value: string;
+};
+
+export type BackendAdminConfigListResponse = {
+  items: Array<BackendAdminConfigItem>;
+};
+
 export type BackendEventPublicItem = {
   id: string;
   title: string;
@@ -162,6 +171,13 @@ const extractAdminEventList = (res: BackendEventAdminListResponse | Array<Backen
   return Array.isArray(res.items) ? res.items : [];
 };
 
+const extractAdminConfigList = (
+  res: BackendAdminConfigListResponse | Array<BackendAdminConfigItem>
+): Array<BackendAdminConfigItem> => {
+  if (Array.isArray(res)) return res;
+  return Array.isArray(res.items) ? res.items : [];
+};
+
 export const backendApi = {
   getMenu: () => request<BackendMenuResponse>('/api/v1/menu', 'GET'),
   getConfig: () => request<Array<BackendPublicConfigItem>>('/api/v1/config', 'GET'),
@@ -181,8 +197,10 @@ export const backendApi = {
     request<{ id: string; status: 'RECEIVED' }>('/api/v1/contacts/projects', 'POST', payload),
 
   admin: {
-    listConfig: (auth: BasicAuth) => request<{ items: Array<{ key: string; value: string }> }>('/admin/config', 'GET', undefined, auth),
-    setConfig: (auth: BasicAuth, key: string, value: string) => request<{ key: string; value: string }>(`/admin/config/${encodeURIComponent(key)}`, 'PUT', { key, value }, auth),
+    listConfig: (auth: BasicAuth) =>
+      request<BackendAdminConfigListResponse | Array<BackendAdminConfigItem>>('/admin/config', 'GET', undefined, auth).then(extractAdminConfigList),
+    setConfig: (auth: BasicAuth, key: string, value: string) =>
+      request<{ key: string; value: string }>(`/admin/config/${encodeURIComponent(key)}`, 'PUT', { key, value }, auth),
     deleteMenuItem: (auth: BasicAuth, itemId: string) => request<void>(`/admin/menu/${encodeURIComponent(itemId)}`, 'DELETE', undefined, auth),
     listProjectContacts: (auth: BasicAuth, limit = 100, offset = 0) =>
       request<BackendAdminProjectContactListResponse>(
