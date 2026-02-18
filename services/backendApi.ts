@@ -95,6 +95,11 @@ export type BackendAdminProjectContactListResponse = {
   items: Array<BackendAdminProjectContactItem>;
 };
 
+export type BackendAdminProjectContactStatsResponse = {
+  total: number;
+  unread: number;
+};
+
 export type BackendPublicConfigItem = {
   key: string;
   value: string;
@@ -209,6 +214,10 @@ export const backendApi = {
         undefined,
         auth
       ),
+    getProjectContactsStats: (auth: BasicAuth) =>
+      request<BackendAdminProjectContactStatsResponse>('/admin/contacts/projects/stats', 'GET', undefined, auth),
+    markProjectContactRead: (auth: BasicAuth, id: string) =>
+      request<void>(`/admin/contacts/projects/${encodeURIComponent(id)}/read`, 'POST', undefined, auth),
     listEvents: (auth: BasicAuth) => request<BackendEventAdminListResponse>('/admin/events', 'GET', undefined, auth).then(extractAdminEventList),
     createEvent: (auth: BasicAuth, payload: BackendEventCreatePayload) => request<{ id: string }>('/admin/events', 'POST', payload, auth),
     updateEvent: (auth: BasicAuth, id: string, payload: BackendEventUpdatePayload) =>

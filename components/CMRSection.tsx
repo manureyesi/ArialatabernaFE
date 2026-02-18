@@ -49,6 +49,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     createdAt: string;
   }>(null);
 
+  const [projectContactsStats, setProjectContactsStats] = useState<{ total: number; unread: number } | null>(null);
+  const [readProjectContactIds, setReadProjectContactIds] = useState<Record<string, true>>({});
+
   const [adminConfigItems, setAdminConfigItems] = useState<Array<{ key: string; value: string }>>([]);
   const [adminConfigDraft, setAdminConfigDraft] = useState<Record<string, string>>({});
   const [isLoadingAdminConfig, setIsLoadingAdminConfig] = useState(false);
@@ -117,6 +120,20 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     setEditEventId(null);
 
     if (!auth) return;
+
+    if (activeTab === 'dashboard') {
+      backendApi.admin
+        .getProjectContactsStats(auth)
+        .then((res) => {
+          setProjectContactsStats({
+            total: Number(res?.total ?? 0),
+            unread: Number(res?.unread ?? 0),
+          });
+        })
+        .catch(() => {
+          setProjectContactsStats(null);
+        });
+    }
 
     if (activeTab === 'menu') {
       backendApi
@@ -632,11 +649,11 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       </div>
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">Novas Propostas</div>
-        <div className="text-3xl font-bold text-blue-600">{newProposalsCount}</div>
+        <div className="text-3xl font-bold text-blue-600">{projectContactsStats?.unread ?? newProposalsCount}</div>
       </div>
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">Confirmadas</div>
-        <div className="text-3xl font-bold text-green-600">{confirmedCount}</div>
+        <div className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">Propostas Totais</div>
+        <div className="text-3xl font-bold text-green-600">{projectContactsStats?.total ?? confirmedCount}</div>
       </div>
     </div>
   );
@@ -884,7 +901,22 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                   <tr
                     key={lead.id}
                     className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setSelectedProjectContact(lead)}
+                    onClick={async () => {
+                      setSelectedProjectContact(lead);
+                      if (!auth) return;
+                      if (readProjectContactIds[lead.id]) return;
+                      try {
+                        await backendApi.admin.markProjectContactRead(auth, lead.id);
+                        setReadProjectContactIds((prev) => ({ ...prev, [lead.id]: true }));
+                        const stats = await backendApi.admin.getProjectContactsStats(auth);
+                        setProjectContactsStats({
+                          total: Number(stats?.total ?? 0),
+                          unread: Number(stats?.unread ?? 0),
+                        });
+                      } catch {
+                        // ignore
+                      }
+                    }}
                   >
                     <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{lead.createdAt}</td>
                     <td className="px-6 py-4">
