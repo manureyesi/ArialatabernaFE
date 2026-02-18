@@ -155,7 +155,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           setFoodMenu(
             menu.food.map((i) => ({
               id: i.id,
-              category: 'A Cociña',
+              category: i.category,
               name: i.name,
               description: i.description || '',
               image: i.imageUrl || undefined,
