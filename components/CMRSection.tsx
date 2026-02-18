@@ -246,12 +246,14 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             name: newItem.name,
             description: newItem.description,
             price: newItem.price,
+            imageUrl: newItemImage || undefined,
           });
         } else {
           await backendApi.admin.createWine(auth, {
             name: newItem.name,
             description: newItem.description,
             category: newItem.category,
+            imageUrl: newItemImage || undefined,
             region: undefined,
             bottlePrice: newItem.price,
           });

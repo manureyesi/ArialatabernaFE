@@ -158,16 +158,17 @@ export const backendApi = {
     deleteEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}`, 'DELETE', undefined, auth),
     publishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/publish`, 'POST', undefined, auth),
     unpublishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/unpublish`, 'POST', undefined, auth),
-    createFood: (auth: BasicAuth, payload: { name: string; description?: string; price?: number }) => {
+    createFood: (auth: BasicAuth, payload: { name: string; description?: string; price?: number; imageUrl?: string }) => {
       const qs = new URLSearchParams();
       qs.set('name', payload.name);
       if (payload.description) qs.set('description', payload.description);
       if (payload.price !== undefined) qs.set('price', String(payload.price));
+      if (payload.imageUrl) qs.set('imageUrl', payload.imageUrl);
       return request<{ id: string }>(`/admin/menu/food?${qs.toString()}`, 'POST', undefined, auth);
     },
     createWine: (
       auth: BasicAuth,
-      payload: { name: string; description?: string; category?: string; region?: string; glassPrice?: number; bottlePrice?: number }
+      payload: { name: string; description?: string; category?: string; region?: string; glassPrice?: number; bottlePrice?: number; imageUrl?: string }
     ) => {
       const qs = new URLSearchParams();
       qs.set('name', payload.name);
@@ -176,6 +177,7 @@ export const backendApi = {
       if (payload.region) qs.set('region', payload.region);
       if (payload.glassPrice !== undefined) qs.set('glassPrice', String(payload.glassPrice));
       if (payload.bottlePrice !== undefined) qs.set('bottlePrice', String(payload.bottlePrice));
+      if (payload.imageUrl) qs.set('imageUrl', payload.imageUrl);
       return request<{ id: string }>(`/admin/menu/wines?${qs.toString()}`, 'POST', undefined, auth);
     },
     upsertScheduleDay: (auth: BasicAuth, payload: { date: string; open?: boolean; note?: string }) => {
