@@ -36,6 +36,18 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
   const [projectContacts, setProjectContacts] = useState<Array<{ id: string; name: string; email: string; phone?: string | null; company?: string | null; subject: string; message: string; consent?: boolean; source?: string | null; createdAt: string }>>([]);
   const [isLoadingProjectContacts, setIsLoadingProjectContacts] = useState(false);
+  const [selectedProjectContact, setSelectedProjectContact] = useState<null | {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string | null;
+    company?: string | null;
+    subject: string;
+    message: string;
+    consent?: boolean;
+    source?: string | null;
+    createdAt: string;
+  }>(null);
 
   // --- MENU MANAGEMENT STATE ---
   const [menuType, setMenuType] = useState<'food' | 'wine'>('food');
@@ -846,7 +858,11 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                 .slice()
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                 .map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50">
+                  <tr
+                    key={lead.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setSelectedProjectContact(lead)}
+                  >
                     <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{lead.createdAt}</td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-black">{lead.name}</div>
@@ -856,7 +872,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                     </td>
                     <td className="px-6 py-4 font-medium text-black">{lead.subject}</td>
                     <td className="px-6 py-4 max-w-md">
-                      <div className="text-xs text-gray-700 whitespace-pre-wrap">{lead.message}</div>
+                      <div className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-4">{lead.message}</div>
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs uppercase tracking-widest">{lead.source || '—'}</td>
                   </tr>
@@ -880,6 +896,66 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             </tbody>
           </table>
         </div>
+
+        {selectedProjectContact && (
+          <div
+            className="fixed inset-0 z-[130] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300"
+            onClick={() => setSelectedProjectContact(null)}
+          >
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-sm"></div>
+            <div
+              className="relative bg-white max-w-5xl w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 rounded-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedProjectContact(null)}
+                className="absolute top-4 right-4 z-10 bg-black text-white p-2 hover:bg-[#4a5d23] transition-colors rounded-full"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="p-8 md:p-12 text-black">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8 border-b border-gray-100 pb-6">
+                  <div>
+                    <div className="text-[#4a5d23] font-bold text-xs uppercase tracking-[0.3em] mb-2">Proposta</div>
+                    <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-tight">{selectedProjectContact.subject}</h3>
+                    <div className="text-gray-400 text-xs uppercase tracking-widest mt-3">{selectedProjectContact.createdAt}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs uppercase tracking-widest text-gray-400">Fonte</div>
+                    <div className="text-sm font-bold text-black uppercase tracking-widest">{selectedProjectContact.source || '—'}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="md:col-span-1">
+                    <div className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-3">Contacto</div>
+                    <div className="space-y-2">
+                      <div className="font-bold text-black">{selectedProjectContact.name}</div>
+                      <div className="text-sm text-gray-600 break-words">{selectedProjectContact.email}</div>
+                      {selectedProjectContact.phone && <div className="text-sm text-gray-600">{selectedProjectContact.phone}</div>}
+                      {selectedProjectContact.company && <div className="text-sm text-gray-500 italic">{selectedProjectContact.company}</div>}
+                      {selectedProjectContact.consent !== undefined && (
+                        <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold pt-3">
+                          Consentimento: {selectedProjectContact.consent ? 'Si' : 'Non'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <div className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-3">Mensaxe</div>
+                    <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed bg-gray-50 border border-gray-100 p-6 rounded-sm max-h-[60vh] overflow-auto">
+                      {selectedProjectContact.message}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 
