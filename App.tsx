@@ -281,11 +281,7 @@ const App: React.FC = () => {
                     Descubrir a Carta
                   </button>
                 </div>
-                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-40">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                </div>
+
               </div>
             </section>
             
