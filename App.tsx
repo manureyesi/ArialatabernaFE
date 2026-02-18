@@ -1,7 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Navbar from './components/Navbar';
-import Sommelier from './components/Sommelier';
 import MenuSection from './components/MenuSection';
 import CMRSection from './components/CMRSection';
 import ProjectSection from './components/ProjectSection';
@@ -410,8 +409,6 @@ const App: React.FC = () => {
           </div>
         </div>
       </footer>
-
-      <Sommelier />
       <CookieBanner onNavigate={setActiveSection} />
 
       {selectedEvent && (
