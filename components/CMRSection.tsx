@@ -51,12 +51,15 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newItemWineType, setNewItemWineType] = useState<'Blanco' | 'Tinto' | 'Doce' | 'Espumoso'>('Blanco');
 
   // --- EVENT MANAGEMENT STATE ---
-  const [editEventId, setEditEventId] = useState<number | null>(null);
+  const [editEventId, setEditEventId] = useState<string | null>(null);
   const [newEventTitle, setNewEventTitle] = useState('');
-  const [newEventDate, setNewEventDate] = useState('');
-  const [newEventTime, setNewEventTime] = useState('');
+  const [newEventDateStart, setNewEventDateStart] = useState('');
+  const [newEventDateEnd, setNewEventDateEnd] = useState('');
+  const [newEventTimezone, setNewEventTimezone] = useState('Europe/Madrid');
   const [newEventDesc, setNewEventDesc] = useState('');
   const [newEventImage, setNewEventImage] = useState('');
+  const [newEventLocationName, setNewEventLocationName] = useState('');
+  const [newEventIsPublished, setNewEventIsPublished] = useState(true);
   const [newEventCat, setNewEventCat] = useState<EventCategory>('Concerto');
 
   // Stats
@@ -81,16 +84,27 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         const items = await backendApi.admin.listEvents(nextAuth);
         setEvents(
           items
-            .filter((it) => !!(it.title || it.name))
-            .map((it) => ({
-              id: typeof it.id === 'number' ? it.id : Number(it.id),
-              title: (it.title || it.name || '').toString(),
-              date: (it.date || '').toString(),
-              time: (it.time || '').toString(),
-              description: (it.description || '').toString(),
-              image: (it.image || 'https://picsum.photos/800/600?grayscale').toString(),
-              category: ((it.category || 'Concerto') as any) as EventItem['category'],
-            }))
+            .filter((it) => !!it.title)
+            .map((it) => {
+              const dt = it.dateStart ? new Date(it.dateStart) : null;
+              const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
+              const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+              return {
+                id: it.id,
+                title: it.title,
+                date,
+                time,
+                description: it.description,
+                image: it.imageUrl || 'https://picsum.photos/800/600?grayscale',
+                category: (it.category as any) as EventItem['category'],
+                dateStart: it.dateStart,
+                dateEnd: it.dateEnd ?? null,
+                timezone: it.timezone,
+                locationName: it.locationName ?? null,
+                isPublished: it.isPublished,
+                imageUrl: it.imageUrl,
+              };
+            })
         );
       } catch {
         // ignore events load errors on login
@@ -215,6 +229,47 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       if (editMenuIndex === index) resetMenuForm();
   };
 
+  const handleDeleteMenuItemFromBackend = async (index: number) => {
+    if (!auth) return;
+    const list = menuType === 'food' ? foodMenu : wineMenu;
+    const item = list[index];
+    if (!item) return;
+
+    if (!item.id) {
+      handleDeleteMenuItem(index);
+      return;
+    }
+
+    try {
+      await backendApi.admin.deleteMenuItem(auth, item.id);
+      const menu = await backendApi.getMenu();
+      setFoodMenu(
+        menu.food.map((i) => ({
+          id: i.id,
+          category: 'A Cociña',
+          name: i.name,
+          description: i.description || '',
+          price: i.price ?? 0,
+          available: i.isActive ?? true,
+          tags: i.tags || [],
+        }))
+      );
+      setWineMenu(
+        menu.wines.map((i) => ({
+          id: i.id,
+          category: i.category || 'Outros',
+          name: i.name,
+          description: i.description || '',
+          price: i.bottlePrice ?? i.glassPrice ?? 0,
+          available: i.isActive ?? true,
+        }))
+      );
+      if (editMenuIndex === index) resetMenuForm();
+    } catch {
+      // ignore
+    }
+  };
+
   const resetMenuForm = () => {
       setNewItemName(''); setNewItemDesc(''); setNewItemPrice(''); setNewItemCategory('');
       setNewItemWinery(''); setNewItemWinemaker(''); setNewItemGrapes(''); setNewItemWineType('Blanco');
@@ -237,13 +292,21 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     e.preventDefault();
     if (!auth) return;
 
+    const toIso = (dtLocal: string): string => {
+      const d = new Date(dtLocal);
+      return d.toISOString();
+    };
+
     const payload = {
       title: newEventTitle,
-      date: newEventDate,
-      time: newEventTime,
+      dateStart: toIso(newEventDateStart),
+      dateEnd: newEventDateEnd ? toIso(newEventDateEnd) : null,
+      timezone: newEventTimezone,
       description: newEventDesc,
-      image: newEventImage || null,
       category: newEventCat,
+      imageUrl: newEventImage || '',
+      locationName: newEventLocationName || null,
+      isPublished: newEventIsPublished,
     };
 
     try {
@@ -256,16 +319,27 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       const items = await backendApi.admin.listEvents(auth);
       setEvents(
         items
-          .filter((it) => !!(it.title || it.name))
-          .map((it) => ({
-            id: typeof it.id === 'number' ? it.id : Number(it.id),
-            title: (it.title || it.name || '').toString(),
-            date: (it.date || '').toString(),
-            time: (it.time || '').toString(),
-            description: (it.description || '').toString(),
-            image: (it.image || 'https://picsum.photos/800/600?grayscale').toString(),
-            category: ((it.category || 'Concerto') as any) as EventItem['category'],
-          }))
+          .filter((it) => !!it.title)
+          .map((it) => {
+            const dt = it.dateStart ? new Date(it.dateStart) : null;
+            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
+            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+            return {
+              id: it.id,
+              title: it.title,
+              date,
+              time,
+              description: it.description,
+              image: it.imageUrl || 'https://picsum.photos/800/600?grayscale',
+              category: (it.category as any) as EventItem['category'],
+              dateStart: it.dateStart,
+              dateEnd: it.dateEnd ?? null,
+              timezone: it.timezone,
+              locationName: it.locationName ?? null,
+              isPublished: it.isPublished,
+              imageUrl: it.imageUrl,
+            };
+          })
       );
       resetEventForm();
     } catch {
@@ -275,32 +349,46 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
   const handleEditEvent = (event: EventItem) => {
       setNewEventTitle(event.title);
-      setNewEventDate(event.date);
-      setNewEventTime(event.time);
       setNewEventDesc(event.description);
       setNewEventCat(event.category);
-      setNewEventImage(event.image);
+      setNewEventImage(event.imageUrl || event.image);
+      setNewEventDateStart(event.dateStart ? event.dateStart.slice(0, 16) : '');
+      setNewEventDateEnd(event.dateEnd ? event.dateEnd.slice(0, 16) : '');
+      setNewEventTimezone(event.timezone || 'Europe/Madrid');
+      setNewEventLocationName(event.locationName || '');
+      setNewEventIsPublished(event.isPublished ?? true);
       setEditEventId(event.id);
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeleteEvent = async (id: number) => {
+  const handleDeleteEvent = async (id: string) => {
     if (!auth) return;
     try {
       await backendApi.admin.deleteEvent(auth, id);
       const items = await backendApi.admin.listEvents(auth);
       setEvents(
         items
-          .filter((it) => !!(it.title || it.name))
-          .map((it) => ({
-            id: typeof it.id === 'number' ? it.id : Number(it.id),
-            title: (it.title || it.name || '').toString(),
-            date: (it.date || '').toString(),
-            time: (it.time || '').toString(),
-            description: (it.description || '').toString(),
-            image: (it.image || 'https://picsum.photos/800/600?grayscale').toString(),
-            category: ((it.category || 'Concerto') as any) as EventItem['category'],
-          }))
+          .filter((it) => !!it.title)
+          .map((it) => {
+            const dt = it.dateStart ? new Date(it.dateStart) : null;
+            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
+            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+            return {
+              id: it.id,
+              title: it.title,
+              date,
+              time,
+              description: it.description,
+              image: it.imageUrl || 'https://picsum.photos/800/600?grayscale',
+              category: (it.category as any) as EventItem['category'],
+              dateStart: it.dateStart,
+              dateEnd: it.dateEnd ?? null,
+              timezone: it.timezone,
+              locationName: it.locationName ?? null,
+              isPublished: it.isPublished,
+              imageUrl: it.imageUrl,
+            };
+          })
       );
       if (editEventId === id) resetEventForm();
     } catch {
@@ -308,7 +396,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     }
   };
 
-  const handleTogglePublish = async (eventId: number, nextPublished: boolean) => {
+  const handleTogglePublish = async (eventId: string, nextPublished: boolean) => {
     if (!auth) return;
     try {
       if (nextPublished) {
@@ -319,16 +407,27 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       const items = await backendApi.admin.listEvents(auth);
       setEvents(
         items
-          .filter((it) => !!(it.title || it.name))
-          .map((it) => ({
-            id: typeof it.id === 'number' ? it.id : Number(it.id),
-            title: (it.title || it.name || '').toString(),
-            date: (it.date || '').toString(),
-            time: (it.time || '').toString(),
-            description: (it.description || '').toString(),
-            image: (it.image || 'https://picsum.photos/800/600?grayscale').toString(),
-            category: ((it.category || 'Concerto') as any) as EventItem['category'],
-          }))
+          .filter((it) => !!it.title)
+          .map((it) => {
+            const dt = it.dateStart ? new Date(it.dateStart) : null;
+            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
+            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+            return {
+              id: it.id,
+              title: it.title,
+              date,
+              time,
+              description: it.description,
+              image: it.imageUrl || 'https://picsum.photos/800/600?grayscale',
+              category: (it.category as any) as EventItem['category'],
+              dateStart: it.dateStart,
+              dateEnd: it.dateEnd ?? null,
+              timezone: it.timezone,
+              locationName: it.locationName ?? null,
+              isPublished: it.isPublished,
+              imageUrl: it.imageUrl,
+            };
+          })
       );
     } catch {
       // ignore
@@ -336,7 +435,14 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   };
 
   const resetEventForm = () => {
-      setNewEventTitle(''); setNewEventDate(''); setNewEventTime(''); setNewEventDesc(''); setNewEventImage('');
+      setNewEventTitle('');
+      setNewEventDateStart('');
+      setNewEventDateEnd('');
+      setNewEventTimezone('Europe/Madrid');
+      setNewEventDesc('');
+      setNewEventImage('');
+      setNewEventLocationName('');
+      setNewEventIsPublished(true);
       setEditEventId(null);
   };
 
@@ -512,7 +618,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                               <td className="px-6 py-3 text-right">
                                   <div className="flex justify-end gap-3">
                                     <button onClick={() => handleEditMenuItem(idx)} className="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase">Editar</button>
-                                    <button onClick={() => handleDeleteMenuItem(idx)} className="text-red-500 hover:text-red-700 text-xs font-bold uppercase">Borrar</button>
+                                    <button onClick={() => handleDeleteMenuItemFromBackend(idx)} className="text-red-500 hover:text-red-700 text-xs font-bold uppercase">Borrar</button>
                                   </div>
                               </td>
                           </tr>
@@ -529,8 +635,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">{editEventId !== null ? 'Editando Evento' : 'Novo Evento'}</h3>
               <form onSubmit={handleSaveEvent} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                   <input type="text" placeholder="Título" required value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
-                  <input type="text" placeholder="Data (Ex: 15 OUT)" required value={newEventDate} onChange={e => setNewEventDate(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
-                  <input type="text" placeholder="Hora (Ex: 21:00)" required value={newEventTime} onChange={e => setNewEventTime(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
+                  <input type="datetime-local" required value={newEventDateStart} onChange={e => setNewEventDateStart(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
+                  <input type="datetime-local" value={newEventDateEnd} onChange={e => setNewEventDateEnd(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
                   <select value={newEventCat} onChange={e => setNewEventCat(e.target.value as any)} className="border p-2 rounded text-sm w-full text-black">
                       <option value="Exposición">Exposición</option>
                       <option value="Zona dos viños">Zona dos viños</option>
@@ -541,10 +647,22 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                       <option value="Humor">Humor</option>
                       <option value="Palabra dita e escrita">Palabra dita e escrita</option>
                   </select>
+                  <input type="text" placeholder="Localización (opcional)" value={newEventLocationName} onChange={e => setNewEventLocationName(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
+                  <input type="text" placeholder="Timezone" value={newEventTimezone} onChange={e => setNewEventTimezone(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
                   <div className="flex flex-col gap-1 w-full">
                     <label className="text-[10px] uppercase font-bold text-gray-400">Cargar Imaxe</label>
                     <input type="file" accept="image/*" onChange={handleEventImageUpload} className="border p-1.5 rounded text-xs w-full text-black file:mr-4 file:py-1 file:px-2 file:rounded-sm file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300" />
                     {newEventImage && <div className="mt-2 flex items-center gap-2"><img src={newEventImage} alt="Preview" className="w-10 h-10 object-cover rounded border" /><button type="button" onClick={() => setNewEventImage('')} className="text-[10px] text-red-500 uppercase font-bold">Quitar</button></div>}
+                  </div>
+                  <div className="flex items-center gap-2 p-2">
+                    <input
+                        type="checkbox"
+                        id="form-published"
+                        checked={newEventIsPublished}
+                        onChange={e => setNewEventIsPublished(e.target.checked)}
+                        className="w-4 h-4 accent-[#4a5d23]"
+                    />
+                    <label htmlFor="form-published" className="text-xs font-bold uppercase tracking-wider text-gray-700">Publicado</label>
                   </div>
                   <input type="text" placeholder="Descrición" required value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
                   <div className="md:col-span-2 lg:col-span-3 flex gap-2 pt-4">

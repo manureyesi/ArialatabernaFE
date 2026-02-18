@@ -13,6 +13,7 @@ export enum Section {
 }
 
 export interface MenuItem {
+  id?: string;
   category: string;
   name: string;
   description: string;
@@ -30,13 +31,20 @@ export interface MenuItem {
 export type EventCategory = 'Exposición' | 'Zona dos viños' | 'Cata' | '[·] de encontro' | 'Concerto' | 'Arte escénica' | 'Humor' | 'Palabra dita e escrita';
 
 export interface EventItem {
-  id: number;
+  id: string;
   title: string;
   date: string;
   time: string;
   description: string;
   image: string;
   category: EventCategory;
+
+  dateStart?: string;
+  dateEnd?: string | null;
+  timezone?: string;
+  locationName?: string | null;
+  isPublished?: boolean;
+  imageUrl?: string;
 }
 
 export interface ChatMessage {

@@ -32,6 +32,7 @@ const App: React.FC = () => {
         if (cancelled) return;
         setFoodMenu(
           menu.food.map((i) => ({
+            id: i.id,
             category: 'A Cociña',
             name: i.name,
             description: i.description || '',
@@ -42,6 +43,7 @@ const App: React.FC = () => {
         );
         setWineMenu(
           menu.wines.map((i) => ({
+            id: i.id,
             category: i.category || 'Outros',
             name: i.name,
             description: i.description || '',
@@ -60,16 +62,27 @@ const App: React.FC = () => {
         if (cancelled) return;
         setEvents(
           items
-            .filter((e) => !!(e.title || e.name))
-            .map((e) => ({
-              id: typeof e.id === 'number' ? e.id : Number(e.id),
-              title: (e.title || e.name || '').toString(),
-              date: (e.date || '').toString(),
-              time: (e.time || '').toString(),
-              description: (e.description || '').toString(),
-              image: (e.image || 'https://picsum.photos/800/600?grayscale').toString(),
-              category: ((e.category || 'Concerto') as any) as EventItem['category'],
-            }))
+            .filter((e) => !!e.title)
+            .map((e) => {
+              const dt = e.dateStart ? new Date(e.dateStart) : null;
+              const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
+              const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+              return {
+                id: e.id,
+                title: e.title,
+                date,
+                time,
+                description: e.description,
+                image: e.imageUrl || 'https://picsum.photos/800/600?grayscale',
+                category: (e.category as any) as EventItem['category'],
+                dateStart: e.dateStart,
+                dateEnd: e.dateEnd ?? null,
+                timezone: e.timezone,
+                locationName: e.locationName ?? null,
+                isPublished: e.isPublished,
+                imageUrl: e.imageUrl,
+              };
+            })
         );
       })
       .catch(() => {

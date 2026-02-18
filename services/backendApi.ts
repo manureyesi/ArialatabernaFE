@@ -25,7 +25,21 @@ const request = async <T>(path: string, method: HttpMethod, body?: unknown, auth
     throw new Error(text || `HTTP ${res.status}`);
   }
 
-  return (await res.json()) as T;
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    return undefined as T;
+  }
+
+  const text = await res.text().catch(() => '');
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 };
 
 export type BackendMenuResponse = {
@@ -54,44 +68,71 @@ export type BackendReservationOut = {
   createdAt: string;
 };
 
-export type BackendEventOut = {
-  id: string | number;
-  title?: string;
-  name?: string;
-  date?: string;
-  time?: string;
-  description?: string | null;
-  image?: string | null;
-  category?: string | null;
-  published?: boolean | null;
-};
-
-export type BackendEventsListResponse =
-  | Array<BackendEventOut>
-  | { items: Array<BackendEventOut> }
-  | { events: Array<BackendEventOut> };
-
-export type BackendEventUpsertPayload = {
+export type BackendEventPublicItem = {
+  id: string;
   title: string;
-  date: string;
-  time: string;
+  dateStart: string;
+  dateEnd?: string | null;
+  timezone?: string;
   description: string;
-  image?: string | null;
   category: string;
-  published?: boolean;
+  imageUrl: string;
+  locationName?: string | null;
+  isPublished?: boolean;
 };
 
-const extractEventList = (res: BackendEventsListResponse): Array<BackendEventOut> => {
+export type BackendEventPublicListResponse = {
+  items: Array<BackendEventPublicItem>;
+  nextCursor?: string | null;
+};
+
+export type BackendEventAdminItem = {
+  id: string;
+  title: string;
+  dateStart: string;
+  dateEnd?: string | null;
+  timezone?: string;
+  description: string;
+  category: string;
+  imageUrl: string;
+  locationName?: string | null;
+  isPublished?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type BackendEventAdminListResponse = {
+  items: Array<BackendEventAdminItem>;
+  nextCursor?: string | null;
+};
+
+export type BackendEventCreatePayload = {
+  title: string;
+  dateStart: string;
+  dateEnd?: string | null;
+  timezone?: string;
+  description: string;
+  category: string;
+  imageUrl: string;
+  locationName?: string | null;
+  isPublished?: boolean;
+};
+
+export type BackendEventUpdatePayload = BackendEventCreatePayload;
+
+const extractPublicEventList = (res: BackendEventPublicListResponse | Array<BackendEventPublicItem>): Array<BackendEventPublicItem> => {
   if (Array.isArray(res)) return res;
-  const anyRes = res as any;
-  if (Array.isArray(anyRes.items)) return anyRes.items;
-  if (Array.isArray(anyRes.events)) return anyRes.events;
-  return [];
+  return Array.isArray(res.items) ? res.items : [];
+};
+
+const extractAdminEventList = (res: BackendEventAdminListResponse | Array<BackendEventAdminItem>): Array<BackendEventAdminItem> => {
+  if (Array.isArray(res)) return res;
+  return Array.isArray(res.items) ? res.items : [];
 };
 
 export const backendApi = {
   getMenu: () => request<BackendMenuResponse>('/api/v1/menu', 'GET'),
-  getEvents: () => request<BackendEventsListResponse>('/api/v1/events', 'GET').then(extractEventList),
+  getEvents: () => request<BackendEventPublicListResponse>('/api/v1/events', 'GET').then(extractPublicEventList),
   getSchedule: (from_?: string, to?: string) => {
     const qs = new URLSearchParams();
     if (from_) qs.set('from_', from_);
@@ -109,13 +150,14 @@ export const backendApi = {
   admin: {
     listConfig: (auth: BasicAuth) => request<{ items: Array<{ key: string; value: string }> }>('/admin/config', 'GET', undefined, auth),
     setConfig: (auth: BasicAuth, key: string, value: string) => request<{ key: string; value: string }>(`/admin/config/${encodeURIComponent(key)}`, 'PUT', { key, value }, auth),
-    listEvents: (auth: BasicAuth) => request<BackendEventsListResponse>('/admin/events', 'GET', undefined, auth).then(extractEventList),
-    createEvent: (auth: BasicAuth, payload: BackendEventUpsertPayload) => request<BackendEventOut>('/admin/events', 'POST', payload, auth),
-    updateEvent: (auth: BasicAuth, id: string | number, payload: BackendEventUpsertPayload) =>
-      request<BackendEventOut>(`/admin/events/${encodeURIComponent(String(id))}`, 'PUT', payload, auth),
-    deleteEvent: (auth: BasicAuth, id: string | number) => request<{ ok?: boolean }>(`/admin/events/${encodeURIComponent(String(id))}`, 'DELETE', undefined, auth),
-    publishEvent: (auth: BasicAuth, id: string | number) => request<BackendEventOut>(`/admin/events/${encodeURIComponent(String(id))}/publish`, 'POST', undefined, auth),
-    unpublishEvent: (auth: BasicAuth, id: string | number) => request<BackendEventOut>(`/admin/events/${encodeURIComponent(String(id))}/unpublish`, 'POST', undefined, auth),
+    deleteMenuItem: (auth: BasicAuth, itemId: string) => request<void>(`/admin/menu/${encodeURIComponent(itemId)}`, 'DELETE', undefined, auth),
+    listEvents: (auth: BasicAuth) => request<BackendEventAdminListResponse>('/admin/events', 'GET', undefined, auth).then(extractAdminEventList),
+    createEvent: (auth: BasicAuth, payload: BackendEventCreatePayload) => request<{ id: string }>('/admin/events', 'POST', payload, auth),
+    updateEvent: (auth: BasicAuth, id: string, payload: BackendEventUpdatePayload) =>
+      request<void>(`/admin/events/${encodeURIComponent(id)}`, 'PUT', payload, auth),
+    deleteEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}`, 'DELETE', undefined, auth),
+    publishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/publish`, 'POST', undefined, auth),
+    unpublishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/unpublish`, 'POST', undefined, auth),
     createFood: (auth: BasicAuth, payload: { name: string; description?: string; price?: number }) => {
       const qs = new URLSearchParams();
       qs.set('name', payload.name);
