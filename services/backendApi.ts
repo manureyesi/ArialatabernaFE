@@ -1,4 +1,4 @@
-type HttpMethod = 'GET' | 'POST' | 'PUT';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 export type BasicAuth = {
   username: string;
@@ -54,8 +54,44 @@ export type BackendReservationOut = {
   createdAt: string;
 };
 
+export type BackendEventOut = {
+  id: string | number;
+  title?: string;
+  name?: string;
+  date?: string;
+  time?: string;
+  description?: string | null;
+  image?: string | null;
+  category?: string | null;
+  published?: boolean | null;
+};
+
+export type BackendEventsListResponse =
+  | Array<BackendEventOut>
+  | { items: Array<BackendEventOut> }
+  | { events: Array<BackendEventOut> };
+
+export type BackendEventUpsertPayload = {
+  title: string;
+  date: string;
+  time: string;
+  description: string;
+  image?: string | null;
+  category: string;
+  published?: boolean;
+};
+
+const extractEventList = (res: BackendEventsListResponse): Array<BackendEventOut> => {
+  if (Array.isArray(res)) return res;
+  const anyRes = res as any;
+  if (Array.isArray(anyRes.items)) return anyRes.items;
+  if (Array.isArray(anyRes.events)) return anyRes.events;
+  return [];
+};
+
 export const backendApi = {
   getMenu: () => request<BackendMenuResponse>('/api/v1/menu', 'GET'),
+  getEvents: () => request<BackendEventsListResponse>('/api/v1/events', 'GET').then(extractEventList),
   getSchedule: (from_?: string, to?: string) => {
     const qs = new URLSearchParams();
     if (from_) qs.set('from_', from_);
@@ -73,6 +109,13 @@ export const backendApi = {
   admin: {
     listConfig: (auth: BasicAuth) => request<{ items: Array<{ key: string; value: string }> }>('/admin/config', 'GET', undefined, auth),
     setConfig: (auth: BasicAuth, key: string, value: string) => request<{ key: string; value: string }>(`/admin/config/${encodeURIComponent(key)}`, 'PUT', { key, value }, auth),
+    listEvents: (auth: BasicAuth) => request<BackendEventsListResponse>('/admin/events', 'GET', undefined, auth).then(extractEventList),
+    createEvent: (auth: BasicAuth, payload: BackendEventUpsertPayload) => request<BackendEventOut>('/admin/events', 'POST', payload, auth),
+    updateEvent: (auth: BasicAuth, id: string | number, payload: BackendEventUpsertPayload) =>
+      request<BackendEventOut>(`/admin/events/${encodeURIComponent(String(id))}`, 'PUT', payload, auth),
+    deleteEvent: (auth: BasicAuth, id: string | number) => request<{ ok?: boolean }>(`/admin/events/${encodeURIComponent(String(id))}`, 'DELETE', undefined, auth),
+    publishEvent: (auth: BasicAuth, id: string | number) => request<BackendEventOut>(`/admin/events/${encodeURIComponent(String(id))}/publish`, 'POST', undefined, auth),
+    unpublishEvent: (auth: BasicAuth, id: string | number) => request<BackendEventOut>(`/admin/events/${encodeURIComponent(String(id))}/unpublish`, 'POST', undefined, auth),
     createFood: (auth: BasicAuth, payload: { name: string; description?: string; price?: number }) => {
       const qs = new URLSearchParams();
       qs.set('name', payload.name);

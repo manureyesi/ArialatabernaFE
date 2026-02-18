@@ -77,6 +77,24 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     const nextAuth = { username, password };
     try {
       await backendApi.admin.listConfig(nextAuth);
+      try {
+        const items = await backendApi.admin.listEvents(nextAuth);
+        setEvents(
+          items
+            .filter((it) => !!(it.title || it.name))
+            .map((it) => ({
+              id: typeof it.id === 'number' ? it.id : Number(it.id),
+              title: (it.title || it.name || '').toString(),
+              date: (it.date || '').toString(),
+              time: (it.time || '').toString(),
+              description: (it.description || '').toString(),
+              image: (it.image || 'https://picsum.photos/800/600?grayscale').toString(),
+              category: ((it.category || 'Concerto') as any) as EventItem['category'],
+            }))
+        );
+      } catch {
+        // ignore events load errors on login
+      }
       setAuth(nextAuth);
       setIsAuthenticated(true);
       setError('');
@@ -215,31 +233,44 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     }
   };
 
-  const handleSaveEvent = (e: React.FormEvent) => {
-      e.preventDefault();
+  const handleSaveEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) return;
+
+    const payload = {
+      title: newEventTitle,
+      date: newEventDate,
+      time: newEventTime,
+      description: newEventDesc,
+      image: newEventImage || null,
+      category: newEventCat,
+    };
+
+    try {
       if (editEventId !== null) {
-          setEvents(events.map(ev => ev.id === editEventId ? {
-              ...ev,
-              title: newEventTitle,
-              date: newEventDate,
-              time: newEventTime,
-              description: newEventDesc,
-              category: newEventCat,
-              image: newEventImage || ev.image
-          } : ev));
+        await backendApi.admin.updateEvent(auth, editEventId, payload);
       } else {
-          const newEvent: EventItem = {
-            id: Date.now(),
-            title: newEventTitle,
-            date: newEventDate,
-            time: newEventTime,
-            description: newEventDesc,
-            category: newEventCat,
-            image: newEventImage || "https://picsum.photos/800/600?grayscale"
-        };
-        setEvents([...events, newEvent]);
+        await backendApi.admin.createEvent(auth, payload);
       }
+
+      const items = await backendApi.admin.listEvents(auth);
+      setEvents(
+        items
+          .filter((it) => !!(it.title || it.name))
+          .map((it) => ({
+            id: typeof it.id === 'number' ? it.id : Number(it.id),
+            title: (it.title || it.name || '').toString(),
+            date: (it.date || '').toString(),
+            time: (it.time || '').toString(),
+            description: (it.description || '').toString(),
+            image: (it.image || 'https://picsum.photos/800/600?grayscale').toString(),
+            category: ((it.category || 'Concerto') as any) as EventItem['category'],
+          }))
+      );
       resetEventForm();
+    } catch {
+      // keep form state
+    }
   };
 
   const handleEditEvent = (event: EventItem) => {
@@ -253,9 +284,55 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeleteEvent = (id: number) => {
-      setEvents(events.filter(e => e.id !== id));
+  const handleDeleteEvent = async (id: number) => {
+    if (!auth) return;
+    try {
+      await backendApi.admin.deleteEvent(auth, id);
+      const items = await backendApi.admin.listEvents(auth);
+      setEvents(
+        items
+          .filter((it) => !!(it.title || it.name))
+          .map((it) => ({
+            id: typeof it.id === 'number' ? it.id : Number(it.id),
+            title: (it.title || it.name || '').toString(),
+            date: (it.date || '').toString(),
+            time: (it.time || '').toString(),
+            description: (it.description || '').toString(),
+            image: (it.image || 'https://picsum.photos/800/600?grayscale').toString(),
+            category: ((it.category || 'Concerto') as any) as EventItem['category'],
+          }))
+      );
       if (editEventId === id) resetEventForm();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleTogglePublish = async (eventId: number, nextPublished: boolean) => {
+    if (!auth) return;
+    try {
+      if (nextPublished) {
+        await backendApi.admin.publishEvent(auth, eventId);
+      } else {
+        await backendApi.admin.unpublishEvent(auth, eventId);
+      }
+      const items = await backendApi.admin.listEvents(auth);
+      setEvents(
+        items
+          .filter((it) => !!(it.title || it.name))
+          .map((it) => ({
+            id: typeof it.id === 'number' ? it.id : Number(it.id),
+            title: (it.title || it.name || '').toString(),
+            date: (it.date || '').toString(),
+            time: (it.time || '').toString(),
+            description: (it.description || '').toString(),
+            image: (it.image || 'https://picsum.photos/800/600?grayscale').toString(),
+            category: ((it.category || 'Concerto') as any) as EventItem['category'],
+          }))
+      );
+    } catch {
+      // ignore
+    }
   };
 
   const resetEventForm = () => {
@@ -479,11 +556,32 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <table className="w-full text-sm text-left">
                   <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-                      <tr><th className="px-6 py-3">Miniatura</th><th className="px-6 py-3">Evento</th><th className="px-6 py-3">Data/Hora</th><th className="px-6 py-3">Tipo</th><th className="px-6 py-3 text-right">Acción</th></tr>
+                      <tr><th className="px-6 py-3">Estado</th><th className="px-6 py-3">Miniatura</th><th className="px-6 py-3">Evento</th><th className="px-6 py-3">Data/Hora</th><th className="px-6 py-3">Tipo</th><th className="px-6 py-3 text-right">Acción</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                       {events.map((event) => (
-                          <tr key={event.id} className={`hover:bg-gray-50 ${editEventId === event.id ? 'bg-blue-50' : ''}`}><td className="px-6 py-3"><img src={event.image} alt="" className="w-12 h-12 object-cover rounded-sm grayscale" /></td><td className="px-6 py-3 font-medium text-black">{event.title}</td><td className="px-6 py-3 text-gray-500">{event.date} - {event.time}</td><td className="px-6 py-3"><span className="bg-black text-white text-[10px] px-2 py-1 uppercase">{event.category}</span></td><td className="px-6 py-3 text-right"><div className="flex justify-end gap-3"><button onClick={() => handleEditEvent(event)} className="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase">Editar</button><button onClick={() => handleDeleteEvent(event.id)} className="text-red-500 hover:text-red-700 text-xs font-bold uppercase">Borrar</button></div></td></tr>
+                          <tr key={event.id} className={`hover:bg-gray-50 ${editEventId === event.id ? 'bg-blue-50' : ''}`}>
+                            <td className="px-6 py-3">
+                              <button
+                                onClick={() => handleTogglePublish(event.id, true)}
+                                className="text-[10px] font-bold uppercase text-green-700 hover:text-green-900"
+                              >
+                                Publicar
+                              </button>
+                              <span className="text-gray-300 mx-2">|</span>
+                              <button
+                                onClick={() => handleTogglePublish(event.id, false)}
+                                className="text-[10px] font-bold uppercase text-gray-500 hover:text-gray-800"
+                              >
+                                Ocultar
+                              </button>
+                            </td>
+                            <td className="px-6 py-3"><img src={event.image} alt="" className="w-12 h-12 object-cover rounded-sm grayscale" /></td>
+                            <td className="px-6 py-3 font-medium text-black">{event.title}</td>
+                            <td className="px-6 py-3 text-gray-500">{event.date} - {event.time}</td>
+                            <td className="px-6 py-3"><span className="bg-black text-white text-[10px] px-2 py-1 uppercase">{event.category}</span></td>
+                            <td className="px-6 py-3 text-right"><div className="flex justify-end gap-3"><button onClick={() => handleEditEvent(event)} className="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase">Editar</button><button onClick={() => handleDeleteEvent(event.id)} className="text-red-500 hover:text-red-700 text-xs font-bold uppercase">Borrar</button></div></td>
+                          </tr>
                       ))}
                   </tbody>
               </table>

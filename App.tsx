@@ -54,6 +54,28 @@ const App: React.FC = () => {
         // keep local constants as fallback
       });
 
+    backendApi
+      .getEvents()
+      .then((items) => {
+        if (cancelled) return;
+        setEvents(
+          items
+            .filter((e) => !!(e.title || e.name))
+            .map((e) => ({
+              id: typeof e.id === 'number' ? e.id : Number(e.id),
+              title: (e.title || e.name || '').toString(),
+              date: (e.date || '').toString(),
+              time: (e.time || '').toString(),
+              description: (e.description || '').toString(),
+              image: (e.image || 'https://picsum.photos/800/600?grayscale').toString(),
+              category: ((e.category || 'Concerto') as any) as EventItem['category'],
+            }))
+        );
+      })
+      .catch(() => {
+        // keep local constants as fallback
+      });
+
     return () => {
       cancelled = true;
     };
