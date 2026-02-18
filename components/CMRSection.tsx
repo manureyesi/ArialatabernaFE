@@ -336,6 +336,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         const menu = await backendApi.getMenu();
         setFoodMenu(
           menu.food.map((i) => ({
+            id: i.id,
             category: 'A Cociña',
             name: i.name,
             description: i.description || '',
@@ -347,6 +348,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         );
         setWineMenu(
           menu.wines.map((i) => ({
+            id: i.id,
             category: i.category || 'Outros',
             name: i.name,
             description: i.description || '',
