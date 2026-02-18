@@ -898,9 +898,12 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                 .slice()
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                 .map((lead) => (
+                  (() => {
+                    const isUnread = !readProjectContactIds[lead.id];
+                    return (
                   <tr
                     key={lead.id}
-                    className="hover:bg-gray-50 cursor-pointer"
+                    className={`hover:bg-gray-50 cursor-pointer ${isUnread ? 'bg-blue-50/30' : ''}`}
                     onClick={async () => {
                       setSelectedProjectContact(lead);
                       if (!auth) return;
@@ -920,17 +923,26 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                   >
                     <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{lead.createdAt}</td>
                     <td className="px-6 py-4">
-                      <div className="font-bold text-black">{lead.name}</div>
+                      <div className={`${isUnread ? 'font-black' : 'font-bold'} text-black flex items-center gap-3`}>
+                        <span>{lead.name}</span>
+                        {isUnread && (
+                          <span className="text-[10px] font-bold uppercase tracking-widest bg-blue-600 text-white px-2 py-1 rounded-full">
+                            Non lida
+                          </span>
+                        )}
+                      </div>
                       <div className="text-gray-500 text-xs">{lead.email}</div>
                       {lead.phone && <div className="text-gray-500 text-xs">{lead.phone}</div>}
                       {lead.company && <div className="text-gray-400 text-xs italic">{lead.company}</div>}
                     </td>
-                    <td className="px-6 py-4 font-medium text-black">{lead.subject}</td>
+                    <td className={`px-6 py-4 text-black ${isUnread ? 'font-black' : 'font-medium'}`}>{lead.subject}</td>
                     <td className="px-6 py-4 max-w-md">
                       <div className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-4">{lead.message}</div>
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs uppercase tracking-widest">{lead.source || '—'}</td>
                   </tr>
+                    );
+                  })()
                 ))}
 
               {isLoadingProjectContacts && (
