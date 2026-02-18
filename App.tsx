@@ -15,6 +15,8 @@ const App: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [eventFilter, setEventFilter] = useState<string>('Todos');
 
+  const [isReservationsEnabled, setIsReservationsEnabled] = useState<boolean>(true);
+
   // --- DATA STATE ---
   const [foodMenu, setFoodMenu] = useState<MenuItem[]>([]);
   const [wineMenu, setWineMenu] = useState<MenuItem[]>([]);
@@ -24,6 +26,24 @@ const App: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
+
+    backendApi
+      .getConfig()
+      .then((items) => {
+        if (cancelled) return;
+        const reserva = Array.isArray(items) ? items.find((it) => it.key === 'reserva-activa') : undefined;
+        if (!reserva) return;
+        const raw = String(reserva.value ?? '').trim().toLowerCase();
+        if (raw === 'false' || raw === '0' || raw === 'no') {
+          setIsReservationsEnabled(false);
+        } else if (raw === 'true' || raw === '1' || raw === 'si' || raw === 'sí' || raw === 'yes') {
+          setIsReservationsEnabled(true);
+        }
+      })
+      .catch(() => {
+        // ignore config errors
+      });
+
     backendApi
       .getMenu()
       .then((menu) => {
@@ -117,6 +137,11 @@ const App: React.FC = () => {
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
 
   useEffect(() => {
+    if (!isReservationsEnabled) {
+      setAvailableTimes([]);
+      setFormTime('');
+      return;
+    }
     if (!formDate) {
       setAvailableTimes([]);
       setFormTime('');
@@ -133,10 +158,11 @@ const App: React.FC = () => {
         setAvailableTimes([]);
       })
       .finally(() => setIsLoadingAvailability(false));
-  }, [formDate, formGuests]);
+  }, [formDate, formGuests, isReservationsEnabled]);
 
   const handleReservationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isReservationsEnabled) return;
     try {
       const out = await backendApi.createReservation({
         date: formDate,
@@ -336,15 +362,25 @@ const App: React.FC = () => {
                </div>
                <div className="bg-[#111] p-10 border border-gray-900 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-1 bg-[#4a5d23]"></div>
+
+                  {!isReservationsEnabled && (
+                    <div className="mb-8 border border-gray-800 bg-black/30 p-6">
+                      <div className="text-[#4a5d23] text-xs font-bold uppercase tracking-[0.4em] mb-3">Reservas non dispoñibles</div>
+                      <p className="text-gray-400 text-sm italic leading-relaxed">
+                        Neste momento as reservas están desactivadas. Por favor, contacta connosco por teléfono ou email.
+                      </p>
+                    </div>
+                  )}
+
                   <form className="space-y-6" onSubmit={handleReservationSubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Data</label>
-                          <input type="date" required value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white focus:border-[#4a5d23] outline-none transition-colors" />
+                          <input type="date" required value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Hora</label>
-                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!formDate || isLoadingAvailability || availableTimes.length === 0}>
+                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || !formDate || isLoadingAvailability || availableTimes.length === 0}>
                               <option value="">{formDate ? (isLoadingAvailability ? 'Cargando...' : (availableTimes.length > 0 ? 'Escoller' : 'Non dispoñible')) : '—'}</option>
                               {availableTimes.map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
@@ -353,15 +389,15 @@ const App: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Comensais</label>
-                          <input type="number" min="1" max="8" required value={formGuests} onChange={e => setFormGuests(parseInt(e.target.value))} className="w-full bg-black border border-gray-800 p-4 text-white focus:border-[#4a5d23] outline-none transition-colors" />
+                          <input type="number" min="1" max="8" required value={formGuests} onChange={e => setFormGuests(parseInt(e.target.value))} className="w-full bg-black border border-gray-800 p-4 text-white disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Nome</label>
-                          <input type="text" placeholder="O teu nome" required value={formName} onChange={e => setFormName(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white focus:border-[#4a5d23] outline-none transition-colors" />
+                          <input type="text" placeholder="O teu nome" required value={formName} onChange={e => setFormName(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
                         </div>
                       </div>
-                      <input type="email" placeholder="Correo electrónico" required value={formEmail} onChange={e => setFormEmail(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white focus:border-[#4a5d23] outline-none transition-colors" />
-                      <button type="submit" className="w-full bg-[#4a5d23] py-5 uppercase font-black tracking-widest hover:bg-[#5b722d] transition-all shadow-xl">Solicitar Confirmación</button>
+                      <input type="email" placeholder="Correo electrónico" required value={formEmail} onChange={e => setFormEmail(e.target.value)} className="w-full bg-black border border-gray-800 p-4 text-white disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
+                      <button type="submit" className="w-full bg-[#4a5d23] py-5 uppercase font-black tracking-widest hover:bg-[#5b722d] transition-all shadow-xl disabled:opacity-30 disabled:hover:bg-[#4a5d23]" disabled={!isReservationsEnabled}>Solicitar Confirmación</button>
                   </form>
                   {formSuccess && <p className="mt-6 text-green-500 text-center font-bold animate-in fade-in slide-in-from-top-2">Recibimos a túa solicitude. Confirmaremos por email!</p>}
                </div>

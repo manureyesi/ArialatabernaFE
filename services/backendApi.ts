@@ -95,6 +95,11 @@ export type BackendAdminProjectContactListResponse = {
   items: Array<BackendAdminProjectContactItem>;
 };
 
+export type BackendPublicConfigItem = {
+  key: string;
+  value: string;
+};
+
 export type BackendEventPublicItem = {
   id: string;
   title: string;
@@ -159,6 +164,7 @@ const extractAdminEventList = (res: BackendEventAdminListResponse | Array<Backen
 
 export const backendApi = {
   getMenu: () => request<BackendMenuResponse>('/api/v1/menu', 'GET'),
+  getConfig: () => request<Array<BackendPublicConfigItem>>('/api/v1/config', 'GET'),
   getEvents: () => request<BackendEventPublicListResponse>('/api/v1/events', 'GET').then(extractPublicEventList),
   getSchedule: (from_?: string, to?: string) => {
     const qs = new URLSearchParams();
