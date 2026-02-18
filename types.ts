@@ -79,6 +79,7 @@ export interface ProjectProposal {
   bio: string;
   socials: string;
   hasFile: boolean; // Simulating file upload state
+  fileBase64?: string;
   createdAt: string;
   status: 'new' | 'read';
 }

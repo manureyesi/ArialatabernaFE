@@ -231,6 +231,7 @@ const App: React.FC = () => {
       proposalBio: p.bio,
       proposalSocials: p.socials,
       proposalHasFile: p.hasFile,
+      proposalFileBase64: p.fileBase64,
     }).catch(() => {
       // ignore UI errors for now
     });

@@ -35,9 +35,19 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ onSubmit }) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.termsAccepted) return;
+
+    let fileBase64: string | undefined = undefined;
+    if (file) {
+      fileBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      }).catch(() => undefined);
+    }
     
     const newProposal: ProjectProposal = {
         id: Date.now().toString(),
@@ -50,6 +60,7 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ onSubmit }) => {
         bio: formData.bio,
         socials: formData.socials,
         hasFile: !!file,
+        fileBase64,
         createdAt: new Date().toISOString().split('T')[0],
         status: 'new'
     };

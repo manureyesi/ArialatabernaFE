@@ -1098,7 +1098,65 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                   <div className="md:col-span-2">
                     <div className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-3">Mensaxe</div>
                     <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed bg-gray-50 border border-gray-100 p-6 rounded-sm max-h-[60vh] overflow-auto">
-                      {selectedProjectContact.message}
+                      {((selectedProjectContact as any).proposalDescription || (selectedProjectContact as any).proposalBio || (selectedProjectContact as any).proposalSocials) ? (
+                        <div className="space-y-6">
+                          {(selectedProjectContact as any).proposalTitle && (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Título</div>
+                              <div className="text-sm text-gray-900 font-bold">{(selectedProjectContact as any).proposalTitle}</div>
+                            </div>
+                          )}
+                          {(selectedProjectContact as any).proposalDiscipline && (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Disciplina</div>
+                              <div className="text-sm text-gray-800">{(selectedProjectContact as any).proposalDiscipline}</div>
+                            </div>
+                          )}
+                          {(selectedProjectContact as any).proposalDescription && (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Descrición</div>
+                              <div className="text-sm text-gray-800 whitespace-pre-wrap">{(selectedProjectContact as any).proposalDescription}</div>
+                            </div>
+                          )}
+                          {(selectedProjectContact as any).proposalBio && (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Bio</div>
+                              <div className="text-sm text-gray-800 whitespace-pre-wrap">{(selectedProjectContact as any).proposalBio}</div>
+                            </div>
+                          )}
+                          {(selectedProjectContact as any).proposalSocials && (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Redes / Links</div>
+                              <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">{(selectedProjectContact as any).proposalSocials}</div>
+                            </div>
+                          )}
+                          {(selectedProjectContact as any).proposalHasFile !== undefined && (selectedProjectContact as any).proposalHasFile !== null && (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Portfolio (PDF)</div>
+                              <div className="text-sm text-gray-800 font-bold">
+                                {(selectedProjectContact as any).proposalHasFile ? 'Si' : 'Non'}
+                              </div>
+                            </div>
+                          )}
+
+                          {(selectedProjectContact as any).proposalFileBase64 && (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Arquivo (base64)</div>
+                              <a
+                                href={(selectedProjectContact as any).proposalFileBase64}
+                                download={`proposta_${selectedProjectContact.id}.pdf`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-block text-xs font-bold uppercase tracking-widest bg-black text-white px-4 py-2 hover:bg-[#4a5d23] transition-colors"
+                              >
+                                Descargar PDF
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        selectedProjectContact.message
+                      )}
                     </div>
                   </div>
                 </div>

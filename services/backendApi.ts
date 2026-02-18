@@ -90,6 +90,13 @@ export type BackendAdminProjectContactItem = {
   source?: string | null;
   read?: boolean;
   isRead?: boolean;
+  proposalTitle?: string | null;
+  proposalDiscipline?: string | null;
+  proposalDescription?: string | null;
+  proposalBio?: string | null;
+  proposalSocials?: string | null;
+  proposalHasFile?: boolean | null;
+  proposalFileBase64?: string | null;
   createdAt: string;
 };
 
@@ -215,6 +222,7 @@ export const backendApi = {
     proposalBio?: string;
     proposalSocials?: string;
     proposalHasFile?: boolean;
+    proposalFileBase64?: string;
   }) =>
     request<{ id: string; status: 'RECEIVED' }>('/api/v1/contacts/projects', 'POST', payload),
 
