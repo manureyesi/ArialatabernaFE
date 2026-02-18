@@ -2,12 +2,13 @@ version: '3.8'
 
 services:
   ariala-web:
-    build: .
+    build:
+      context: .
+      args:
+        - VITE_API_KEY=${API_KEY}
     container_name: ariala_taberna_web
     ports:
       - "8080:8080"
-    environment:
-      - API_KEY=${API_KEY}
     restart: always
     networks:
       - ariala-network

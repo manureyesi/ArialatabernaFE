@@ -17,7 +17,11 @@ Mantén as respostas breves e elegantes.
 
 export const getSommelierRecommendation = async (userQuery: string): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+      return "Síntoo, falta configurar a clave da IA (VITE_API_KEY).";
+    }
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: userQuery,
