@@ -9,7 +9,6 @@ import LegalSection from './components/LegalSection';
 import CookieBanner from './components/CookieBanner';
 import Logo from './components/Logo';
 import { Section, MenuItem, EventItem, Reservation, ProjectProposal } from './types';
-import { FOOD_MENU, WINE_MENU, EVENTS } from './constants';
 import { backendApi } from './services/backendApi';
 
 const App: React.FC = () => {
@@ -18,9 +17,9 @@ const App: React.FC = () => {
   const [eventFilter, setEventFilter] = useState<string>('Todos');
 
   // --- DATA STATE ---
-  const [foodMenu, setFoodMenu] = useState<MenuItem[]>(FOOD_MENU);
-  const [wineMenu, setWineMenu] = useState<MenuItem[]>(WINE_MENU);
-  const [events, setEvents] = useState<EventItem[]>(EVENTS);
+  const [foodMenu, setFoodMenu] = useState<MenuItem[]>([]);
+  const [wineMenu, setWineMenu] = useState<MenuItem[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [proposals, setProposals] = useState<ProjectProposal[]>([]);
 
