@@ -225,6 +225,12 @@ const App: React.FC = () => {
       message: `${p.description}\n\n${p.bio}\n\n${p.socials}`,
       consent: true,
       source: 'website',
+      proposalTitle: p.title,
+      proposalDiscipline: p.discipline,
+      proposalDescription: p.description,
+      proposalBio: p.bio,
+      proposalSocials: p.socials,
+      proposalHasFile: p.hasFile,
     }).catch(() => {
       // ignore UI errors for now
     });

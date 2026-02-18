@@ -200,7 +200,22 @@ export const backendApi = {
   createReservation: (payload: { date: string; time: string; partySize: number; customer: { name: string; phone?: string; email?: string }; notes?: string }) =>
     request<BackendReservationOut>('/api/v1/reservations', 'POST', payload),
   cancelReservation: (id: string, reason?: string) => request<BackendReservationOut>(`/api/v1/reservations/${encodeURIComponent(id)}/cancel`, 'POST', { reason: reason ?? null }),
-  contactProjects: (payload: { name: string; email: string; phone?: string; company?: string; subject: string; message: string; consent?: boolean; source?: string }) =>
+  contactProjects: (payload: {
+    name: string;
+    email: string;
+    phone?: string;
+    company?: string;
+    subject: string;
+    message: string;
+    consent?: boolean;
+    source?: string;
+    proposalTitle?: string;
+    proposalDiscipline?: string;
+    proposalDescription?: string;
+    proposalBio?: string;
+    proposalSocials?: string;
+    proposalHasFile?: boolean;
+  }) =>
     request<{ id: string; status: 'RECEIVED' }>('/api/v1/contacts/projects', 'POST', payload),
 
   admin: {
