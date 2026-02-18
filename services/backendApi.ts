@@ -78,6 +78,23 @@ export type BackendReservationOut = {
   createdAt: string;
 };
 
+export type BackendAdminProjectContactItem = {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  company?: string | null;
+  subject: string;
+  message: string;
+  consent?: boolean;
+  source?: string | null;
+  createdAt: string;
+};
+
+export type BackendAdminProjectContactListResponse = {
+  items: Array<BackendAdminProjectContactItem>;
+};
+
 export type BackendEventPublicItem = {
   id: string;
   title: string;
@@ -161,6 +178,13 @@ export const backendApi = {
     listConfig: (auth: BasicAuth) => request<{ items: Array<{ key: string; value: string }> }>('/admin/config', 'GET', undefined, auth),
     setConfig: (auth: BasicAuth, key: string, value: string) => request<{ key: string; value: string }>(`/admin/config/${encodeURIComponent(key)}`, 'PUT', { key, value }, auth),
     deleteMenuItem: (auth: BasicAuth, itemId: string) => request<void>(`/admin/menu/${encodeURIComponent(itemId)}`, 'DELETE', undefined, auth),
+    listProjectContacts: (auth: BasicAuth, limit = 100, offset = 0) =>
+      request<BackendAdminProjectContactListResponse>(
+        `/admin/contacts/projects?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
+        'GET',
+        undefined,
+        auth
+      ),
     listEvents: (auth: BasicAuth) => request<BackendEventAdminListResponse>('/admin/events', 'GET', undefined, auth).then(extractAdminEventList),
     createEvent: (auth: BasicAuth, payload: BackendEventCreatePayload) => request<{ id: string }>('/admin/events', 'POST', payload, auth),
     updateEvent: (auth: BasicAuth, id: string, payload: BackendEventUpdatePayload) =>

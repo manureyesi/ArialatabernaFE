@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Reservation, MenuItem, EventItem, ProjectProposal, EventCategory } from '../types';
 import { COLORS, WINE_DO_ORDER } from '../constants';
 import { backendApi, BasicAuth } from '../services/backendApi';
@@ -33,6 +33,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [error, setError] = useState('');
   const [auth, setAuth] = useState<BasicAuth | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'reservations' | 'customers' | 'menu' | 'events' | 'proposals'>('dashboard');
+
+  const [projectContacts, setProjectContacts] = useState<Array<{ id: string; name: string; email: string; phone?: string | null; company?: string | null; subject: string; message: string; consent?: boolean; source?: string | null; createdAt: string }>>([]);
+  const [isLoadingProjectContacts, setIsLoadingProjectContacts] = useState(false);
 
   // --- MENU MANAGEMENT STATE ---
   const [menuType, setMenuType] = useState<'food' | 'wine'>('food');
@@ -68,6 +71,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const today = new Date().toISOString().split('T')[0];
   const todayReservations = reservations.filter(r => r.date === today && r.status === 'confirmed').length;
   const newProposalsCount = proposals.filter(p => p.status === 'new').length;
+
+  const projectContactsNewCount = useMemo(() => projectContacts.length, [projectContacts]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -160,6 +165,21 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         })
         .catch(() => {
           // ignore
+        });
+    }
+
+    if (activeTab === 'proposals') {
+      setIsLoadingProjectContacts(true);
+      backendApi.admin
+        .listProjectContacts(auth, 100, 0)
+        .then((res) => {
+          setProjectContacts(Array.isArray(res.items) ? res.items : []);
+        })
+        .catch(() => {
+          setProjectContacts([]);
+        })
+        .finally(() => {
+          setIsLoadingProjectContacts(false);
         });
     }
   }, [activeTab, auth, setEvents, setFoodMenu, setWineMenu]);
@@ -813,19 +833,50 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-              <tr><th className="px-6 py-4">Estado</th><th className="px-6 py-4">Candidato / Contacto</th><th className="px-6 py-4">Proxecto / Disciplina</th><th className="px-6 py-4">Detalles</th><th className="px-6 py-4 text-right">Accións</th></tr>
+              <tr>
+                <th className="px-6 py-4">Data</th>
+                <th className="px-6 py-4">Nome / Contacto</th>
+                <th className="px-6 py-4">Asunto</th>
+                <th className="px-6 py-4">Mensaxe</th>
+                <th className="px-6 py-4">Fonte</th>
+              </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {proposals.map((prop) => (
-                <tr key={prop.id} className={`hover:bg-gray-50 ${prop.status === 'new' ? 'bg-blue-50/50' : ''}`}>
-                   <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider ${prop.status === 'new' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>{prop.status === 'new' ? 'Novo' : 'Lido'}</span><div className="text-[10px] text-gray-400 mt-1">{prop.createdAt}</div></td>
-                   <td className="px-6 py-4"><div className="font-bold text-black">{prop.name}</div><div className="text-gray-500 text-xs">{prop.email}</div><div className="text-gray-500 text-xs">{prop.phone}</div><div className="text-[#4a5d23] text-xs mt-1">{prop.socials}</div></td>
-                   <td className="px-6 py-4"><div className="font-bold text-black">{prop.title}</div><div className="inline-block bg-gray-200 text-gray-700 text-[10px] px-1 rounded uppercase">{prop.discipline}</div>{prop.hasFile && <div className="text-xs text-blue-600 mt-1">📎 CV/Portfolio adxunto</div>}</td>
-                   <td className="px-6 py-4 max-w-xs"><div className="text-xs text-gray-800 mb-1"><span className="font-bold">Desc:</span> {prop.description.substring(0, 80)}...</div><div className="text-xs text-gray-500 italic"><span className="font-bold not-italic">Bio:</span> {prop.bio.substring(0, 50)}...</div></td>
-                   <td className="px-6 py-4 text-right space-x-2">{prop.status === 'new' && <button onClick={() => handleMarkProposalRead(prop.id)} className="text-[#4a5d23] hover:text-green-800 font-bold text-xs uppercase block ml-auto mb-2">Marcar Lido</button>}<button onClick={() => handleDeleteProposal(prop.id)} className="text-red-500 hover:text-red-700 text-xs underline">Eliminar</button></td>
+              {projectContacts
+                .slice()
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((lead) => (
+                  <tr key={lead.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{lead.createdAt}</td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-black">{lead.name}</div>
+                      <div className="text-gray-500 text-xs">{lead.email}</div>
+                      {lead.phone && <div className="text-gray-500 text-xs">{lead.phone}</div>}
+                      {lead.company && <div className="text-gray-400 text-xs italic">{lead.company}</div>}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-black">{lead.subject}</td>
+                    <td className="px-6 py-4 max-w-md">
+                      <div className="text-xs text-gray-700 whitespace-pre-wrap">{lead.message}</div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 text-xs uppercase tracking-widest">{lead.source || '—'}</td>
+                  </tr>
+                ))}
+
+              {isLoadingProjectContacts && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-400 italic">
+                    Cargando propostas...
+                  </td>
                 </tr>
-              ))}
-               {proposals.length === 0 && <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-400 italic">Non hai propostas recibidas aínda.</td></tr>}
+              )}
+
+              {!isLoadingProjectContacts && projectContacts.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-400 italic">
+                    Non hai propostas recibidas aínda.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -928,7 +979,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         <div className="flex gap-6 border-b border-gray-300 mb-8 overflow-x-auto">
           {['dashboard', 'reservations', 'proposals', 'customers', 'menu', 'events'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab as any)} className={`pb-3 uppercase text-xs font-bold tracking-widest transition-colors whitespace-nowrap ${activeTab === tab ? 'border-b-2 border-[#4a5d23] text-[#4a5d23]' : 'text-gray-400 hover:text-gray-600'}`}>
-              {tab === 'dashboard' ? 'Panel Principal' : tab === 'reservations' ? 'Reservas' : tab === 'proposals' ? `Propostas (${newProposalsCount})` : tab === 'customers' ? 'Clientes' : tab === 'menu' ? 'Xestión Carta' : 'Xestión Eventos'}
+              {tab === 'dashboard' ? 'Panel Principal' : tab === 'reservations' ? 'Reservas' : tab === 'proposals' ? `Propostas (${projectContactsNewCount || newProposalsCount})` : tab === 'customers' ? 'Clientes' : tab === 'menu' ? 'Xestión Carta' : 'Xestión Eventos'}
             </button>
           ))}
         </div>
