@@ -16,6 +16,8 @@ const App: React.FC = () => {
   const [eventFilter, setEventFilter] = useState<string>('Todos');
 
   const [isReservationsEnabled, setIsReservationsEnabled] = useState<boolean>(true);
+  const [contactPhone, setContactPhone] = useState<string>('');
+  const [contactMail, setContactMail] = useState<string>('');
 
   // --- DATA STATE ---
   const [foodMenu, setFoodMenu] = useState<MenuItem[]>([]);
@@ -31,14 +33,23 @@ const App: React.FC = () => {
       .getConfig()
       .then((items) => {
         if (cancelled) return;
-        const reserva = Array.isArray(items) ? items.find((it) => it.key === 'reserva-activa') : undefined;
-        if (!reserva) return;
-        const raw = String(reserva.value ?? '').trim().toLowerCase();
-        if (raw === 'false' || raw === '0' || raw === 'no') {
-          setIsReservationsEnabled(false);
-        } else if (raw === 'true' || raw === '1' || raw === 'si' || raw === 'sí' || raw === 'yes') {
-          setIsReservationsEnabled(true);
+        if (!Array.isArray(items)) return;
+
+        const reserva = items.find((it) => it.key === 'reserva-activa');
+        if (reserva) {
+          const raw = String(reserva.value ?? '').trim().toLowerCase();
+          if (raw === 'false' || raw === '0' || raw === 'no') {
+            setIsReservationsEnabled(false);
+          } else if (raw === 'true' || raw === '1' || raw === 'si' || raw === 'sí' || raw === 'yes') {
+            setIsReservationsEnabled(true);
+          }
         }
+
+        const phone = items.find((it) => it.key === 'telefono-contacto');
+        if (phone) setContactPhone(String(phone.value ?? '').trim());
+
+        const mail = items.find((it) => it.key === 'mail-contacto');
+        if (mail) setContactMail(String(mail.value ?? '').trim());
       })
       .catch(() => {
         // ignore config errors
@@ -355,8 +366,8 @@ const App: React.FC = () => {
                   <h2 className="text-6xl md:text-7xl font-black mb-8 uppercase tracking-tighter leading-none">RESERVA A TÚA <span className="text-[#4a5d23]">EXPERIENCIA</span></h2>
                   <p className="text-xl text-gray-400 italic mb-12">Para mesas de máis de 8 persoas ou eventos privados, por favor contacta directamente por teléfono.</p>
                   <div className="space-y-4 text-gray-400">
-                    <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Tel: +34 986 XX XX XX</p>
-                    <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Mail: reservas@ariala.gal</p>
+                    <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Tel: {contactPhone || '+34 986 XX XX XX'}</p>
+                    <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Mail: {contactMail || 'reservas@ariala.gal'}</p>
                     <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Zona dos Viños, A Estrada</p>
                   </div>
                </div>
