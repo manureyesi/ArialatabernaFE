@@ -88,6 +88,8 @@ export type BackendAdminProjectContactItem = {
   message: string;
   consent?: boolean;
   source?: string | null;
+  read?: boolean;
+  isRead?: boolean;
   createdAt: string;
 };
 

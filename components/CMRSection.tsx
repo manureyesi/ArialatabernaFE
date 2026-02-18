@@ -34,7 +34,22 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [auth, setAuth] = useState<BasicAuth | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'reservations' | 'customers' | 'menu' | 'events' | 'proposals' | 'config'>('dashboard');
 
-  const [projectContacts, setProjectContacts] = useState<Array<{ id: string; name: string; email: string; phone?: string | null; company?: string | null; subject: string; message: string; consent?: boolean; source?: string | null; createdAt: string }>>([]);
+  const [projectContacts, setProjectContacts] = useState<
+    Array<{
+      id: string;
+      name: string;
+      email: string;
+      phone?: string | null;
+      company?: string | null;
+      subject: string;
+      message: string;
+      consent?: boolean;
+      source?: string | null;
+      createdAt: string;
+      read?: boolean;
+      isRead?: boolean;
+    }>
+  >([]);
   const [isLoadingProjectContacts, setIsLoadingProjectContacts] = useState(false);
   const [selectedProjectContact, setSelectedProjectContact] = useState<null | {
     id: string;
@@ -901,7 +916,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                 .map((lead) => (
                   (() => {
-                    const isUnread = !readProjectContactIds[lead.id];
+                    const backendIsRead = Boolean((lead as any).isRead ?? (lead as any).read ?? false);
+                    const isUnread = !backendIsRead && !readProjectContactIds[lead.id];
                     return (
                   <tr
                     key={lead.id}
@@ -913,6 +929,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                       try {
                         await backendApi.admin.markProjectContactRead(auth, lead.id);
                         setReadProjectContactIds((prev) => ({ ...prev, [lead.id]: true }));
+                        setProjectContacts((prev) => prev.map((x) => (x.id === lead.id ? { ...x, read: true, isRead: true } : x)));
                         const stats = await backendApi.admin.getProjectContactsStats(auth);
                         setProjectContactsStats({
                           total: Number(stats?.total ?? 0),
