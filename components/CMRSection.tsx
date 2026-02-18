@@ -83,13 +83,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newItemAvailable, setNewItemAvailable] = useState(true);
   
   // Wine specific fields
-  const [newItemWinery, setNewItemWinery] = useState('');
-  const [newItemWinemaker, setNewItemWinemaker] = useState('');
-  const [newItemGrapes, setNewItemGrapes] = useState('');
   const [newItemRegion, setNewItemRegion] = useState('');
   const [newItemGlassPrice, setNewItemGlassPrice] = useState('');
   const [newItemBottlePrice, setNewItemBottlePrice] = useState('');
-  const [newItemWineType, setNewItemWineType] = useState<'Blanco' | 'Tinto' | 'Doce' | 'Espumoso'>('Blanco');
 
   // --- EVENT MANAGEMENT STATE ---
   const [editEventId, setEditEventId] = useState<string | null>(null);
@@ -119,13 +115,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     setNewItemDesc('');
     setNewItemPrice('');
     setNewItemCategory('');
-    setNewItemWinery('');
-    setNewItemWinemaker('');
-    setNewItemGrapes('');
     setNewItemRegion('');
     setNewItemGlassPrice('');
     setNewItemBottlePrice('');
-    setNewItemWineType('Blanco');
     setNewItemImage('');
     setNewItemAvailable(true);
     setEditMenuIndex(null);
@@ -337,13 +329,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           tags: [],
           available: newItemAvailable,
           image: newItemImage || undefined,
-          winery: menuType === 'wine' ? newItemWinery : undefined,
-          winemaker: menuType === 'wine' ? newItemWinemaker : undefined,
-          grapes: menuType === 'wine' ? newItemGrapes : undefined,
           region: menuType === 'wine' ? (newItemRegion.trim() ? newItemRegion.trim() : null) : undefined,
           glassPrice: menuType === 'wine' ? (newItemGlassPrice.trim() ? Number(newItemGlassPrice) : null) : undefined,
           bottlePrice: menuType === 'wine' ? (newItemBottlePrice.trim() ? Number(newItemBottlePrice) : null) : undefined,
-          wineType: menuType === 'wine' ? newItemWineType : undefined,
       };
 
       try {
@@ -450,13 +438,9 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       setNewItemCategory(item.category);
       setNewItemImage(item.image || '');
       setNewItemAvailable(item.available);
-      setNewItemWinery(item.winery || '');
-      setNewItemWinemaker(item.winemaker || '');
-      setNewItemGrapes(item.grapes || '');
       setNewItemRegion(String(item.region ?? ''));
       setNewItemGlassPrice(item.glassPrice === null || item.glassPrice === undefined ? '' : String(item.glassPrice));
       setNewItemBottlePrice(item.bottlePrice === null || item.bottlePrice === undefined ? '' : String(item.bottlePrice));
-      setNewItemWineType(item.wineType || 'Blanco');
       setEditMenuIndex(index);
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -515,9 +499,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
   const resetMenuForm = () => {
       setNewItemName(''); setNewItemDesc(''); setNewItemPrice(''); setNewItemCategory('');
-      setNewItemWinery(''); setNewItemWinemaker(''); setNewItemGrapes('');
       setNewItemRegion(''); setNewItemGlassPrice(''); setNewItemBottlePrice('');
-      setNewItemWineType('Blanco');
       setNewItemImage(''); setNewItemAvailable(true);
       setEditMenuIndex(null);
   };
@@ -746,9 +728,6 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                   
                   {menuType === 'wine' ? (
                     <>
-                      <input type="text" placeholder="Adega" value={newItemWinery} onChange={e => setNewItemWinery(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
-                      <input type="text" placeholder="Vinicultor / Enólogo" value={newItemWinemaker} onChange={e => setNewItemWinemaker(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
-                      <input type="text" placeholder="Uvas" value={newItemGrapes} onChange={e => setNewItemGrapes(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
                       <select value={newItemCategory} onChange={e => setNewItemCategory(e.target.value)} className="border p-2 rounded text-sm w-full text-black">
                         <option value="">Selecciona D.O.</option>
                         {WINE_DO_ORDER.map(doName => <option key={doName} value={doName}>{doName}</option>)}
@@ -760,12 +739,6 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                         onChange={e => setNewItemRegion(e.target.value)}
                         className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
                       />
-                      <select value={newItemWineType} onChange={e => setNewItemWineType(e.target.value as any)} className="border p-2 rounded text-sm w-full text-black">
-                        <option value="Blanco">Blanco</option>
-                        <option value="Tinto">Tinto</option>
-                        <option value="Doce">Doce</option>
-                        <option value="Espumoso">Espumoso</option>
-                      </select>
                     </>
                   ) : (
                     <input type="text" placeholder="Categoría (Ex: Entremés)" value={newItemCategory} onChange={e => setNewItemCategory(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
@@ -869,21 +842,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                               <td className="px-6 py-3">
                                 <div className="font-bold text-black flex items-center gap-2">
                                   {item.name}
-                                  {menuType === 'wine' && item.wineType && (
-                                    <span className="text-[9px] uppercase font-black" style={{ color: getTypeColor(item.wineType) }}>
-                                      {item.wineType}
-                                    </span>
-                                  )}
                                   {!item.available && (
                                     <span className="bg-red-100 text-red-600 text-[8px] px-1 rounded font-bold uppercase">Esgotado</span>
                                   )}
                                 </div>
-                                {menuType === 'wine' && (
-                                  <div className="text-[10px] text-gray-500">
-                                    {item.winery && <span className="uppercase">{item.winery}</span>}
-                                    {item.winemaker && ` — ${item.winemaker}`}
-                                  </div>
-                                )}
                                 <div className="text-gray-600 text-[11px] mt-0.5">{item.description}</div>
                               </td>
                               <td className="px-6 py-3 text-gray-600 font-medium">{item.category}</td>
