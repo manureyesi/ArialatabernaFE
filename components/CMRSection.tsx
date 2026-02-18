@@ -340,6 +340,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             await backendApi.admin.updateMenuItem(auth, editItem.id, {
               name: newItem.name,
               description: newItem.description,
+              category: newItem.category,
               price: newItem.price,
               imageUrl: newItemImage || null,
               isActive: newItemAvailable,
@@ -361,6 +362,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             await backendApi.admin.createFood(auth, {
               name: newItem.name,
               description: newItem.description,
+              category: newItem.category,
               price: newItem.price,
               imageUrl: newItemImage || undefined,
               isActive: newItemAvailable,
@@ -383,7 +385,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         setFoodMenu(
           menu.food.map((i) => ({
             id: i.id,
-            category: 'A Cociña',
+            category: i.category || 'Outros',
             name: i.name,
             description: i.description || '',
             image: i.imageUrl || undefined,
@@ -471,7 +473,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       setFoodMenu(
         menu.food.map((i) => ({
           id: i.id,
-          category: 'A Cociña',
+          category: i.category || 'Outros',
           name: i.name,
           description: i.description || '',
           image: i.imageUrl || undefined,

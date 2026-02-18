@@ -26,6 +26,17 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems }) => {
   };
 
   const foodGroups = groupBy(foodItems);
+  const orderedFoodCategories = useMemo(() => {
+    const categories = Object.keys(foodGroups);
+    return categories
+      .map((c) => (c && c.trim() ? c : 'Outros'))
+      .filter((c, idx, arr) => arr.indexOf(c) === idx)
+      .sort((a, b) => {
+        if (a === 'Outros' && b !== 'Outros') return 1;
+        if (b === 'Outros' && a !== 'Outros') return -1;
+        return a.localeCompare(b);
+      });
+  }, [foodGroups]);
   
   // Filtered wine groups
   const filteredWineItems = useMemo(() => {
@@ -151,9 +162,10 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems }) => {
           <p className="text-gray-400 text-[10px] uppercase mt-2 font-bold tracking-widest italic">Pulsa nos pratos para velos</p>
         </div>
 
-        {Object.entries(foodGroups).map(([category, items]) => 
-          renderCategoryBlock(category, items, 'food')
-        )}
+        {orderedFoodCategories.map((category) => {
+          const items = foodGroups[category] ?? foodGroups[''] ?? foodGroups['Outros'] ?? [];
+          return renderCategoryBlock(category, items, 'food');
+        })}
       </div>
 
       {/* DIVIDER */}

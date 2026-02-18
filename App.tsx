@@ -62,7 +62,7 @@ const App: React.FC = () => {
         setFoodMenu(
           menu.food.map((i) => ({
             id: i.id,
-            category: 'A Cociña',
+            category: i.category || 'Outros',
             name: i.name,
             description: i.description || '',
             image: i.imageUrl || undefined,

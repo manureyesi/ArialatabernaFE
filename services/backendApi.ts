@@ -46,7 +46,7 @@ export type BackendMenuResponse = {
   id: string;
   updatedAt: string;
   currency: string;
-  food: Array<{ id: string; name: string; description?: string | null; price?: number | null; tags?: string[]; isActive?: boolean; imageUrl?: string | null }>;
+  food: Array<{ id: string; name: string; description?: string | null; category?: string | null; price?: number | null; tags?: string[]; isActive?: boolean; imageUrl?: string | null }>;
   wines: Array<{
     id: string;
     name: string;
@@ -252,7 +252,10 @@ export const backendApi = {
     deleteEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}`, 'DELETE', undefined, auth),
     publishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/publish`, 'POST', undefined, auth),
     unpublishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/unpublish`, 'POST', undefined, auth),
-    createFood: (auth: BasicAuth, payload: { name: string; description?: string; price?: number; imageUrl?: string; isActive?: boolean }) =>
+    createFood: (
+      auth: BasicAuth,
+      payload: { name: string; description?: string; category?: string; price?: number; imageUrl?: string; isActive?: boolean }
+    ) =>
       request<{ id: string }>('/admin/menu/food', 'POST', payload, auth),
     createWine: (
       auth: BasicAuth,
