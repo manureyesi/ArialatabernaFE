@@ -106,6 +106,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               category: 'A Cociña',
               name: i.name,
               description: i.description || '',
+              image: i.imageUrl || undefined,
               price: i.price ?? 0,
               available: i.isActive ?? true,
               tags: i.tags || [],
@@ -117,6 +118,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               category: i.category || 'Outros',
               name: i.name,
               description: i.description || '',
+              image: i.imageUrl || undefined,
               price: i.bottlePrice ?? i.glassPrice ?? 0,
               available: i.isActive ?? true,
             }))
@@ -265,6 +267,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             category: 'A Cociña',
             name: i.name,
             description: i.description || '',
+            image: i.imageUrl || undefined,
             price: i.price ?? 0,
             available: i.isActive ?? true,
             tags: i.tags || [],
@@ -275,6 +278,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             category: i.category || 'Outros',
             name: i.name,
             description: i.description || '',
+            image: i.imageUrl || undefined,
             price: i.bottlePrice ?? i.glassPrice ?? 0,
             available: i.isActive ?? true,
           }))
@@ -344,6 +348,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           category: 'A Cociña',
           name: i.name,
           description: i.description || '',
+          image: i.imageUrl || undefined,
           price: i.price ?? 0,
           available: i.isActive ?? true,
           tags: i.tags || [],
@@ -355,6 +360,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           category: i.category || 'Outros',
           name: i.name,
           description: i.description || '',
+          image: i.imageUrl || undefined,
           price: i.bottlePrice ?? i.glassPrice ?? 0,
           available: i.isActive ?? true,
         }))

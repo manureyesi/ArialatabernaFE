@@ -46,8 +46,18 @@ export type BackendMenuResponse = {
   id: string;
   updatedAt: string;
   currency: string;
-  food: Array<{ id: string; name: string; description?: string | null; price?: number | null; tags?: string[]; isActive?: boolean }>;
-  wines: Array<{ id: string; name: string; description?: string | null; category?: string | null; region?: string | null; glassPrice?: number | null; bottlePrice?: number | null; isActive?: boolean }>;
+  food: Array<{ id: string; name: string; description?: string | null; price?: number | null; tags?: string[]; isActive?: boolean; imageUrl?: string | null }>;
+  wines: Array<{
+    id: string;
+    name: string;
+    description?: string | null;
+    category?: string | null;
+    region?: string | null;
+    glassPrice?: number | null;
+    bottlePrice?: number | null;
+    isActive?: boolean;
+    imageUrl?: string | null;
+  }>;
 };
 
 export type BackendAvailabilityResponse = {
