@@ -416,8 +416,8 @@ const App: React.FC = () => {
                 {scheduleText ? (
                   <div className="max-w-xl mx-auto mb-14 border border-gray-900 bg-[#0a0a0a] p-8">
                     <div className="text-[#4a5d23] font-bold tracking-[0.4em] text-xs uppercase mb-4">HORARIO</div>
-                    <div className="text-gray-300 text-sm whitespace-pre-line leading-relaxed font-medium">
-                      {scheduleText}
+                    <div className="text-gray-200 text-base md:text-lg whitespace-pre-line leading-relaxed font-semibold">
+                      {scheduleText.replace(/\s*\|\s*/g, '\n')}
                     </div>
                   </div>
                 ) : null}
