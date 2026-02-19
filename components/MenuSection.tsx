@@ -61,13 +61,13 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems, foodCat
   const getTypeColor = (type?: string): string | undefined => {
     switch (type) {
       case 'Branco':
-        return '#16a34a';
+        return '#4ade80';
       case 'Tinto':
-        return '#7c3aed';
+        return '#a78bfa';
       case 'Doce':
-        return '#f97316';
+        return '#fb923c';
       case 'Espumoso':
-        return '#facc15';
+        return '#fde047';
       default:
         return undefined;
     }
