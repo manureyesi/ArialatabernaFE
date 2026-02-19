@@ -100,6 +100,7 @@ const App: React.FC = () => {
   const [contactMail, setContactMail] = useState<string>('');
   const [scheduleText, setScheduleText] = useState<string>('');
   const [homeHeroImageUrl, setHomeHeroImageUrl] = useState<string>('');
+  const [isConfigResolved, setIsConfigResolved] = useState<boolean>(false);
 
   // --- DATA STATE ---
   const [foodMenu, setFoodMenu] = useState<MenuItem[]>([]);
@@ -170,6 +171,11 @@ const App: React.FC = () => {
       })
       .catch(() => {
         // ignore config errors
+        if (cancelled) return;
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsConfigResolved(true);
       });
 
     backendApi
@@ -392,11 +398,15 @@ const App: React.FC = () => {
           <div className="animate-in fade-in duration-1000">
             <section className="relative h-screen flex items-center justify-center overflow-hidden">
               <div className="absolute inset-0 z-0">
-                <img
-                  src={homeHeroImageUrl ? homeHeroImageUrl : defaultHomeHeroImageUrl}
-                  alt="A Riala Taberna Interior"
-                  className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow"
-                />
+                {isConfigResolved ? (
+                  <img
+                    src={homeHeroImageUrl ? homeHeroImageUrl : defaultHomeHeroImageUrl}
+                    alt="A Riala Taberna Interior"
+                    className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-black"></div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black"></div>
               </div>
               <div className="relative z-10 text-center px-4 max-w-6xl mx-auto flex flex-col items-center">
