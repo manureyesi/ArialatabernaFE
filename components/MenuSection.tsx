@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {MenuItem} from '../types';
 
 interface MenuSectionProps {
@@ -11,6 +11,7 @@ interface MenuSectionProps {
 const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems, foodCategoryOrder = [], wineCategoryOrder = [] }) => {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [wineFilter, setWineFilter] = useState<string>('Todos');
+  const wineFilterRef = useRef<HTMLDivElement | null>(null);
 
   // Grouping logic helper (only for available items)
   const groupBy = (items: MenuItem[]) => {
@@ -233,20 +234,44 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems, foodCat
           <p className="text-black text-xs uppercase tracking-[0.4em] mt-5 font-bold mb-10">Selección de Viticultores e D.O.</p>
           
           {/* WINE FILTERS */}
-          <div className="flex gap-2 mb-16 overflow-x-auto no-scrollbar pb-4 justify-start md:justify-center">
-            {wineCategories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setWineFilter(cat)}
-                className={`px-5 py-2 whitespace-nowrap rounded-full text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                  wineFilter === cat 
-                    ? 'bg-[#4a5d23] border-[#4a5d23] text-white shadow-lg' 
-                    : 'border-gray-200 text-gray-400 hover:border-black hover:text-black'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          <div className="relative mb-16">
+            <button
+              type="button"
+              aria-label="Desprazar categorías á esquerda"
+              onClick={() => wineFilterRef.current?.scrollBy({ left: -260, behavior: 'smooth' })}
+              className="hidden md:flex items-center justify-center absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 border border-gray-200 text-gray-700 shadow-sm hover:bg-white"
+            >
+              <span className="text-lg leading-none">‹</span>
+            </button>
+
+            <div
+              ref={wineFilterRef}
+              className="flex gap-2 overflow-x-auto no-scrollbar pb-4 pr-10 pl-10 md:pl-12 md:pr-12 scroll-smooth"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {wineCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setWineFilter(cat)}
+                  className={`px-5 py-2 whitespace-nowrap rounded-full text-[10px] font-bold uppercase tracking-widest transition-all border ${
+                    wineFilter === cat
+                      ? 'bg-[#4a5d23] border-[#4a5d23] text-white shadow-lg'
+                      : 'border-gray-200 text-gray-400 hover:border-black hover:text-black'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              aria-label="Desprazar categorías á dereita"
+              onClick={() => wineFilterRef.current?.scrollBy({ left: 260, behavior: 'smooth' })}
+              className="hidden md:flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 border border-gray-200 text-gray-700 shadow-sm hover:bg-white"
+            >
+              <span className="text-lg leading-none">›</span>
+            </button>
           </div>
         </div>
 
