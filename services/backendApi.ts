@@ -215,7 +215,7 @@ export const backendApi = {
   getMenu: () => request<BackendMenuResponse>('/api/v1/menu', 'GET'),
   getMenuCategories: (category: BackendMenuCategoriesQueryCategory) =>
     request<Array<BackendMenuCategoryNode>>(
-      `/api/v1/menu/categories?category=${encodeURIComponent(category === 'adega' ? 'vino' : category)}`,
+      `/api/v1/menu/categories?category=${encodeURIComponent(category === 'adega' ? 'adega' : category)}`,
       'GET'
     ),
   getConfig: () => request<Array<BackendPublicConfigItem>>('/api/v1/config', 'GET'),
