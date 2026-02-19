@@ -253,12 +253,14 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems, foodCat
         {Object.keys(wineGroups).length > 0 ? (
           (() => {
             const orderIndex = new Map<string, number>();
-            const order = wineCategoryOrder.length > 0 ? wineCategoryOrder : WINE_DO_ORDER;
-            order.forEach((c, idx) => orderIndex.set(c, idx));
+            const order = Array.isArray(wineCategoryOrder) ? wineCategoryOrder : [];
+            order.forEach((c: string, idx: number) => orderIndex.set(c, idx));
             const hasBackendOrder = wineCategoryOrder.length > 0;
 
             return Object.entries(wineGroups)
               .sort(([a], [b]) => {
+                if (a === 'Outros' && b !== 'Outros') return 1;
+                if (b === 'Outros' && a !== 'Outros') return -1;
                 if (hasBackendOrder) {
                   const ia = orderIndex.has(a) ? (orderIndex.get(a) as number) : Number.POSITIVE_INFINITY;
                   const ib = orderIndex.has(b) ? (orderIndex.get(b) as number) : Number.POSITIVE_INFINITY;
@@ -266,12 +268,7 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems, foodCat
                   return a.localeCompare(b);
                 }
 
-                const indexA = WINE_DO_ORDER.indexOf(a);
-                const indexB = WINE_DO_ORDER.indexOf(b);
-                if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-                if (indexA === -1) return 1;
-                if (indexB === -1) return -1;
-                return indexA - indexB;
+                return a.localeCompare(b);
               })
               .map(([category, items]) => renderCategoryBlock(category, items, 'wine'));
           })()
