@@ -63,6 +63,7 @@ export type BackendMenuResponse = {
 export type BackendMenuCategoriesQueryCategory = 'vino' | 'cocina' | 'adega';
 
 export type BackendAdminMenuCategoryNode = {
+  id?: number;
   category: string;
   subcategory: string | null;
   orden: number;
@@ -296,6 +297,8 @@ export const backendApi = {
     listMenuCategories: (auth: BasicAuth) => request<Array<BackendAdminMenuCategoryNode>>('/admin/menu/categories', 'GET', undefined, auth),
     createMenuCategory: (auth: BasicAuth, payload: { category: string; subcategory?: string | null; orden: number }) =>
       request<void>('/admin/menu/categories', 'POST', payload, auth),
+    deleteMenuCategory: (auth: BasicAuth, id: number) =>
+      request<void>(`/admin/menu/categories/${encodeURIComponent(String(id))}`, 'DELETE', undefined, auth),
     upsertScheduleDay: (auth: BasicAuth, payload: { date: string; open?: boolean; note?: string }) => {
       const qs = new URLSearchParams();
       qs.set('date', payload.date);

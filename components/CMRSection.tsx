@@ -372,6 +372,21 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     }
   };
 
+  const handleDeleteMenuCategoryNode = async (id?: number) => {
+    if (!auth) return;
+    if (!id) return;
+    try {
+      await backendApi.admin.deleteMenuCategory(auth, id);
+      setIsLoadingMenuCategories(true);
+      const items = await backendApi.admin.listMenuCategories(auth);
+      setMenuCategories(items || []);
+    } catch {
+      // ignore
+    } finally {
+      setIsLoadingMenuCategories(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const nextAuth = { username, password };
@@ -1067,9 +1082,19 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                             .slice()
                             .sort((a, b) => Number(a.orden ?? 0) - Number(b.orden ?? 0))
                             .map((sub) => (
-                              <div key={`${sub.category}-${sub.subcategory ?? 'root'}`} className="flex items-center justify-between">
+                              <div key={`${sub.category}-${sub.subcategory ?? 'root'}`} className="flex items-center justify-between gap-3">
                                 <div className="text-sm text-gray-800">{sub.subcategory}</div>
-                                <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Orden: {sub.orden}</div>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Orden: {sub.orden}</div>
+                                  <button
+                                    type="button"
+                                    disabled={!sub.id}
+                                    onClick={() => handleDeleteMenuCategoryNode(sub.id)}
+                                    className={`text-[10px] font-bold uppercase ${sub.id ? 'text-red-500 hover:text-red-700' : 'text-gray-300 cursor-not-allowed'}`}
+                                  >
+                                    Borrar
+                                  </button>
+                                </div>
                               </div>
                             ))}
                         </div>
