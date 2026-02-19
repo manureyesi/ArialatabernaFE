@@ -15,6 +15,83 @@ const App: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [eventFilter, setEventFilter] = useState<string>('Todos');
 
+  const sectionToPath = (section: Section): string => {
+    switch (section) {
+      case Section.HOME:
+        return '/home';
+      case Section.EVENTS:
+        return '/axenda';
+      case Section.MENU:
+        return '/carta';
+      case Section.RESERVATIONS:
+        return '/reservas';
+      case Section.PROJECTS:
+        return '/proxectos';
+      case Section.CAREERS:
+        return '/equipo';
+      case Section.LEGAL:
+        return '/legal';
+      case Section.PRIVACY:
+        return '/privacidade';
+      case Section.COOKIES:
+        return '/cookies';
+      case Section.CMR:
+        return '/cmr';
+      default:
+        return '/home';
+    }
+  };
+
+  const pathToSection = (pathname: string): Section => {
+    const clean = String(pathname || '/').trim().toLowerCase();
+    if (clean === '/' || clean === '/home') return Section.HOME;
+    if (clean === '/axenda') return Section.EVENTS;
+    if (clean === '/carta') return Section.MENU;
+    if (clean === '/reservas') return Section.RESERVATIONS;
+    if (clean === '/proxectos') return Section.PROJECTS;
+    if (clean === '/equipo' || clean === '/traballa') return Section.CAREERS;
+    if (clean === '/legal') return Section.LEGAL;
+    if (clean === '/privacidade') return Section.PRIVACY;
+    if (clean === '/cookies') return Section.COOKIES;
+    if (clean === '/cmr' || clean === '/admin') return Section.CMR;
+    return Section.HOME;
+  };
+
+  const navigateToSection = (section: Section, opts?: { replace?: boolean }) => {
+    setActiveSection(section);
+
+    const target = sectionToPath(section);
+    const current = window.location.pathname || '/';
+
+    if (section === Section.HOME) {
+      if (current !== '/' && current !== '/home') {
+        const method = opts?.replace ? 'replaceState' : 'pushState';
+        window.history[method]({}, '', '/');
+      }
+      return;
+    }
+
+    if (current !== target) {
+      const method = opts?.replace ? 'replaceState' : 'pushState';
+      window.history[method]({}, '', target);
+    }
+  };
+
+  useEffect(() => {
+    const initial = pathToSection(window.location.pathname);
+    if (initial !== activeSection) {
+      setActiveSection(initial);
+    }
+
+    const onPopState = () => {
+      const next = pathToSection(window.location.pathname);
+      setActiveSection(next);
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   const [isReservationsEnabled, setIsReservationsEnabled] = useState<boolean>(true);
   const [contactPhone, setContactPhone] = useState<string>('');
   const [contactMail, setContactMail] = useState<string>('');
@@ -283,7 +360,7 @@ const App: React.FC = () => {
         wineMenu={wineMenu} setWineMenu={setWineMenu}
         events={events} setEvents={setEvents}
         proposals={proposals} setProposals={setProposals}
-        onExit={() => setActiveSection(Section.HOME)}
+        onExit={() => navigateToSection(Section.HOME)}
       />
     );
   }
@@ -292,7 +369,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-[#4a5d23] flex flex-col">
-      <Navbar currentSection={activeSection} onNavigate={setActiveSection} isLightBackground={isLightBackground} />
+      <Navbar currentSection={activeSection} onNavigate={navigateToSection} isLightBackground={isLightBackground} />
       <main className="flex-grow">
         {activeSection === Section.HOME && (
           <div className="animate-in fade-in duration-1000">
@@ -310,11 +387,11 @@ const App: React.FC = () => {
                   "Onde o tempo detense entre conversas e o mellor da nosa terra."
                 </p>
                 <div className="flex flex-col md:flex-row gap-8 justify-center animate-in slide-in-from-bottom duration-1000 delay-700">
-                  <button onClick={() => setActiveSection(Section.RESERVATIONS)} className="group relative overflow-hidden border-2 border-white px-12 py-5 uppercase tracking-widest text-sm font-bold transition-all duration-300 hover:text-black">
+                  <button onClick={() => navigateToSection(Section.RESERVATIONS)} className="group relative overflow-hidden border-2 border-white px-12 py-5 uppercase tracking-widest text-sm font-bold transition-all duration-300 hover:text-black">
                     <span className="relative z-10">Reservar Mesa</span>
                     <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                   </button>
-                  <button onClick={() => setActiveSection(Section.MENU)} className="bg-[#4a5d23] hover:bg-[#5b722d] text-white px-12 py-5 uppercase tracking-widest text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-[#4a5d23]/20">
+                  <button onClick={() => navigateToSection(Section.MENU)} className="bg-[#4a5d23] hover:bg-[#5b722d] text-white px-12 py-5 uppercase tracking-widest text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-[#4a5d23]/20">
                     Descubrir a Carta
                   </button>
                 </div>
@@ -490,27 +567,27 @@ const App: React.FC = () => {
             </div>
             <div className="space-y-4">
               <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-6">Navegación</h4>
-              <button onClick={() => setActiveSection(Section.MENU)} className="block hover:text-white transition-colors">A Carta</button>
-              <button onClick={() => setActiveSection(Section.EVENTS)} className="block hover:text-white transition-colors">Axenda</button>
-              <button onClick={() => setActiveSection(Section.RESERVATIONS)} className="block hover:text-white transition-colors">Reservas</button>
+              <button onClick={() => navigateToSection(Section.MENU)} className="block hover:text-white transition-colors">A Carta</button>
+              <button onClick={() => navigateToSection(Section.EVENTS)} className="block hover:text-white transition-colors">Axenda</button>
+              <button onClick={() => navigateToSection(Section.RESERVATIONS)} className="block hover:text-white transition-colors">Reservas</button>
             </div>
             <div className="space-y-4">
               <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-6">Legal</h4>
-              <button onClick={() => setActiveSection(Section.LEGAL)} className="block hover:text-white transition-colors">Aviso Legal</button>
-              <button onClick={() => setActiveSection(Section.PRIVACY)} className="block hover:text-white transition-colors">Privacidade</button>
-              <button onClick={() => setActiveSection(Section.COOKIES)} className="block hover:text-white transition-colors">Cookies</button>
+              <button onClick={() => navigateToSection(Section.LEGAL)} className="block hover:text-white transition-colors">Aviso Legal</button>
+              <button onClick={() => navigateToSection(Section.PRIVACY)} className="block hover:text-white transition-colors">Privacidade</button>
+              <button onClick={() => navigateToSection(Section.COOKIES)} className="block hover:text-white transition-colors">Cookies</button>
             </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-12 border-t border-gray-900 text-[10px] font-bold uppercase tracking-widest">
             <p>&copy; {new Date().getFullYear()} A Riala Taberna. Todos os dereitos reservados.</p>
             <div className="flex items-center gap-6">
               <a href="https://instagram.com/arialataberna" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a>
-              <button onClick={() => setActiveSection(Section.CMR)} className="border border-gray-800 px-4 py-2 hover:border-white hover:text-white transition-all">Acceso Admin</button>
+              <button onClick={() => navigateToSection(Section.CMR)} className="border border-gray-800 px-4 py-2 hover:border-white hover:text-white transition-all">Acceso Admin</button>
             </div>
           </div>
         </div>
       </footer>
-      <CookieBanner onNavigate={setActiveSection} />
+      <CookieBanner onNavigate={navigateToSection} />
 
       {selectedEvent && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">

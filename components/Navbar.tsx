@@ -43,7 +43,10 @@ const Navbar: React.FC<NavbarProps> = ({ currentSection, onNavigate, isLightBack
       <div className="flex justify-between items-center max-w-7xl mx-auto">
         <div 
           className={`text-2xl font-bold tracking-[0.2em] cursor-pointer transition-colors duration-300 ${logoColorClass}`}
-          onClick={() => onNavigate(Section.HOME)}
+          onClick={() => {
+            onNavigate(Section.HOME);
+            setMobileMenuOpen(false);
+          }}
         >
           A RIALA
           <span className="font-normal" style={{color: COLORS.mossGreen}}> TABERNA</span>
