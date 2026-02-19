@@ -297,7 +297,7 @@ export const backendApi = {
     listMenuCategories: (auth: BasicAuth) => request<Array<BackendAdminMenuCategoryNode>>('/admin/menu/categories', 'GET', undefined, auth),
     createMenuCategory: (auth: BasicAuth, payload: { category: string; subcategory?: string | null; orden: number }) =>
       request<void>('/admin/menu/categories', 'POST', payload, auth),
-    deleteMenuCategory: (auth: BasicAuth, id: number) =>
+    deleteMenuCategory: (auth: BasicAuth, id: number | string) =>
       request<void>(`/admin/menu/categories/${encodeURIComponent(String(id))}`, 'DELETE', undefined, auth),
     upsertScheduleDay: (auth: BasicAuth, payload: { date: string; open?: boolean; note?: string }) => {
       const qs = new URLSearchParams();

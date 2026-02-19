@@ -372,7 +372,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     }
   };
 
-  const handleDeleteMenuCategoryNode = async (id?: number) => {
+  const handleDeleteMenuCategoryNode = async (id?: number | string) => {
     if (!auth) return;
     if (!id) return;
     try {
@@ -385,6 +385,16 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     } finally {
       setIsLoadingMenuCategories(false);
     }
+  };
+
+  const getMenuCategoryNodeId = (node: unknown): number | string | undefined => {
+    if (!node || typeof node !== 'object') return undefined;
+    const anyNode = node as any;
+    const raw = anyNode.id ?? anyNode.categoryId ?? anyNode.menuCategoryId ?? anyNode.category_id ?? anyNode.menu_category_id;
+    if (raw === null || raw === undefined) return undefined;
+    if (typeof raw === 'number') return raw;
+    if (typeof raw === 'string' && raw.trim()) return raw.trim();
+    return undefined;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -1086,14 +1096,19 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                                 <div className="text-sm text-gray-800">{sub.subcategory}</div>
                                 <div className="flex items-center gap-3">
                                   <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Orden: {sub.orden}</div>
+                                  {(() => {
+                                    const subId = getMenuCategoryNodeId(sub);
+                                    return (
                                   <button
                                     type="button"
-                                    disabled={!sub.id}
-                                    onClick={() => handleDeleteMenuCategoryNode(sub.id)}
-                                    className={`text-[10px] font-bold uppercase ${sub.id ? 'text-red-500 hover:text-red-700' : 'text-gray-300 cursor-not-allowed'}`}
+                                    disabled={!subId}
+                                    onClick={() => handleDeleteMenuCategoryNode(subId as any)}
+                                    className={`text-[10px] font-bold uppercase ${subId ? 'text-red-500 hover:text-red-700' : 'text-gray-300 cursor-not-allowed'}`}
                                   >
                                     Borrar
                                   </button>
+                                    );
+                                  })()}
                                 </div>
                               </div>
                             ))}
