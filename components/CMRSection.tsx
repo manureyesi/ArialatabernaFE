@@ -87,6 +87,30 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [menuAvailableCategories, setMenuAvailableCategories] = useState<Array<string>>([]);
   const [isLoadingMenuAvailableCategories, setIsLoadingMenuAvailableCategories] = useState(false);
 
+  const flattenMenuCategoryNodes = (nodes: Array<{ category: string; subcategory: string | null; orden: number; children: any[] }>): Array<string> => {
+    const acc: Array<{ label: string; orden: number }> = [];
+
+    const walk = (items: Array<{ category: string; subcategory: string | null; orden: number; children: any[] }>) => {
+      items.forEach((n) => {
+        const label = (n.subcategory ?? n.category ?? '').trim();
+        if (label) {
+          if (n.subcategory !== null || (!Array.isArray(n.children) || n.children.length === 0)) {
+            acc.push({ label, orden: Number(n.orden ?? 0) });
+          }
+        }
+
+        if (Array.isArray(n.children) && n.children.length > 0) {
+          walk(n.children as any);
+        }
+      });
+    };
+
+    walk(nodes);
+    return acc
+      .sort((a, b) => (a.orden - b.orden) || a.label.localeCompare(b.label))
+      .map((it) => it.label);
+  };
+
   const [menuCategories, setMenuCategories] = useState<Array<BackendAdminMenuCategoryNode>>([]);
   const [isLoadingMenuCategories, setIsLoadingMenuCategories] = useState(false);
   const [newMenuCategory, setNewMenuCategory] = useState('');
@@ -315,7 +339,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     backendApi
       .getMenuCategories(menuType === 'wine' ? 'vino' : 'cocina')
       .then((items) => {
-        const next = Array.isArray(items) ? items.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim()) : [];
+        const next = Array.isArray(items) ? flattenMenuCategoryNodes(items as any) : [];
         setMenuAvailableCategories(next);
       })
       .catch(() => {

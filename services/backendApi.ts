@@ -69,6 +69,13 @@ export type BackendAdminMenuCategoryNode = {
   children: Array<BackendAdminMenuCategoryNode>;
 };
 
+export type BackendMenuCategoryNode = {
+  category: string;
+  subcategory: string | null;
+  orden: number;
+  children: Array<BackendMenuCategoryNode>;
+};
+
 export type BackendAvailabilityResponse = {
   date: string;
   partySize: number;
@@ -204,7 +211,7 @@ const extractAdminConfigList = (
 export const backendApi = {
   getMenu: () => request<BackendMenuResponse>('/api/v1/menu', 'GET'),
   getMenuCategories: (category: BackendMenuCategoriesQueryCategory) =>
-    request<Array<string>>(`/api/v1/menu/categories?category=${encodeURIComponent(category)}`, 'GET'),
+    request<Array<BackendMenuCategoryNode>>(`/api/v1/menu/categories?category=${encodeURIComponent(category)}`, 'GET'),
   getConfig: () => request<Array<BackendPublicConfigItem>>('/api/v1/config', 'GET'),
   getEvents: () => request<BackendEventPublicListResponse>('/api/v1/events', 'GET').then(extractPublicEventList),
   getSchedule: (from_?: string, to?: string) => {
