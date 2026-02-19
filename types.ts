@@ -28,7 +28,7 @@ export interface MenuItem {
   region?: string | null;
   glassPrice?: number | null;
   bottlePrice?: number | null;
-  wineType?: 'Blanco' | 'Tinto' | 'Doce' | 'Espumoso';
+  wineType?: string;
 }
 
 export type EventCategory = 'Exposición' | 'Zona dos viños' | 'Cata' | '[·] de encontro' | 'Concerto' | 'Arte escénica' | 'Humor' | 'Palabra dita e escrita';

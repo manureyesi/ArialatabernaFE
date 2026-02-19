@@ -86,6 +86,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newItemImage, setNewItemImage] = useState('');
   const [newItemAvailable, setNewItemAvailable] = useState(true);
 
+  const [wineTypeOptions, setWineTypeOptions] = useState<Array<string>>(['Branco', 'Tinto', 'Doce', 'Espumoso']);
+
   const [menuAvailableCategories, setMenuAvailableCategories] = useState<Array<string>>([]);
   const [isLoadingMenuAvailableCategories, setIsLoadingMenuAvailableCategories] = useState(false);
 
@@ -354,6 +356,22 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       })
       .finally(() => {
         setIsLoadingMenuAvailableCategories(false);
+      });
+
+    if (!auth) return;
+    backendApi.admin
+      .listConfig(auth)
+      .then((items) => {
+        const next = Array.isArray(items) ? items : [];
+        const raw = next.find((it) => it.key === 'wine-type')?.value;
+        const parsed = String(raw ?? '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (parsed.length > 0) setWineTypeOptions(parsed);
+      })
+      .catch(() => {
+        // ignore
       });
   }, [activeTab, menuType]);
 
@@ -923,10 +941,11 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                       className="border p-2 rounded text-sm w-full text-black"
                     >
                       <option value="">Tipo (opcional)</option>
-                      <option value="Blanco">Blanco</option>
-                      <option value="Tinto">Tinto</option>
-                      <option value="Doce">Doce</option>
-                      <option value="Espumoso">Espumoso</option>
+                      {wineTypeOptions.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
                     </select>
                   ) : null}
 

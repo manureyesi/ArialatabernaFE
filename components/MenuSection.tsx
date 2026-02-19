@@ -58,13 +58,18 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems, foodCat
 
   const wineGroups = groupBy(filteredWineItems);
 
-  const getTypeColor = (type?: string) => {
+  const getTypeColor = (type?: string): string | undefined => {
     switch (type) {
-      case 'Blanco': return COLORS.mossGreen;
-      case 'Tinto': return COLORS.tinto;
-      case 'Doce': return COLORS.doce;
-      case 'Espumoso': return COLORS.espumoso;
-      default: return '#000000';
+      case 'Branco':
+        return '#16a34a';
+      case 'Tinto':
+        return '#7c3aed';
+      case 'Doce':
+        return '#f97316';
+      case 'Espumoso':
+        return '#facc15';
+      default:
+        return undefined;
     }
   };
 
@@ -88,12 +93,17 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems, foodCat
               </svg>
             )}
             {type === 'wine' && item.wineType && (
-              <span 
-                className="ml-1 text-[10px] font-black uppercase tracking-widest" 
-                style={{ color: getTypeColor(item.wineType) }}
-              >
-                {item.wineType}
-              </span>
+              (() => {
+                const color = getTypeColor(item.wineType);
+                return (
+                  <span
+                    className="ml-1 text-[10px] font-black uppercase tracking-widest"
+                    style={color ? { color } : undefined}
+                  >
+                    {item.wineType}
+                  </span>
+                );
+              })()
             )}
           </h4>
           {type === 'wine' ? (
