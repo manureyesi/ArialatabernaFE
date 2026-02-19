@@ -79,6 +79,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('');
   const [newItemRegion, setNewItemRegion] = useState('');
+  const [newItemWineType, setNewItemWineType] = useState('');
+  const [newItemGrapes, setNewItemGrapes] = useState('');
   const [newItemGlassPrice, setNewItemGlassPrice] = useState('');
   const [newItemBottlePrice, setNewItemBottlePrice] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
@@ -243,6 +245,11 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               description: i.description || '',
               image: i.imageUrl || undefined,
               price: i.bottlePrice ?? i.glassPrice ?? 0,
+              region: i.region ?? null,
+              grapes: i.grapes ?? undefined,
+              wineType: (i.wineType ?? undefined) as any,
+              glassPrice: i.glassPrice ?? null,
+              bottlePrice: i.bottlePrice ?? null,
               available: i.isActive ?? true,
             }))
           );
@@ -472,6 +479,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           available: newItemAvailable,
           image: newItemImage || undefined,
           region: menuType === 'wine' ? (newItemRegion.trim() ? newItemRegion.trim() : null) : undefined,
+          wineType: menuType === 'wine' ? ((newItemWineType.trim() ? newItemWineType.trim() : undefined) as any) : undefined,
+          grapes: menuType === 'wine' ? (newItemGrapes.trim() ? newItemGrapes.trim() : undefined) : undefined,
           glassPrice: menuType === 'wine' ? (newItemGlassPrice.trim() ? Number(newItemGlassPrice) : null) : undefined,
           bottlePrice: menuType === 'wine' ? (newItemBottlePrice.trim() ? Number(newItemBottlePrice) : null) : undefined,
       };
@@ -493,6 +502,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               description: newItem.description,
               category: newItem.category,
               region: newItem.region ?? null,
+              wineType: (newItem as any).wineType ?? null,
+              grapes: (newItem as any).grapes ?? null,
               glassPrice: newItem.glassPrice ?? null,
               bottlePrice: newItem.bottlePrice ?? null,
               imageUrl: newItemImage || null,
@@ -515,6 +526,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               description: newItem.description,
               category: newItem.category,
               region: newItem.region ?? null,
+              wineType: (newItem as any).wineType ?? null,
+              grapes: (newItem as any).grapes ?? null,
               glassPrice: newItem.glassPrice ?? null,
               bottlePrice: newItem.bottlePrice ?? null,
               imageUrl: newItemImage || undefined,
@@ -544,6 +557,11 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             description: i.description || '',
             image: i.imageUrl || undefined,
             price: i.bottlePrice ?? i.glassPrice ?? 0,
+            region: i.region ?? null,
+            grapes: i.grapes ?? undefined,
+            wineType: (i.wineType ?? undefined) as any,
+            glassPrice: i.glassPrice ?? null,
+            bottlePrice: i.bottlePrice ?? null,
             available: i.isActive ?? true,
           }))
         );
@@ -580,6 +598,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       setNewItemImage(item.image || '');
       setNewItemAvailable(item.available);
       setNewItemRegion(String(item.region ?? ''));
+      setNewItemWineType(String((item as any).wineType ?? ''));
+      setNewItemGrapes(String((item as any).grapes ?? ''));
       setNewItemGlassPrice(item.glassPrice === null || item.glassPrice === undefined ? '' : String(item.glassPrice));
       setNewItemBottlePrice(item.bottlePrice === null || item.bottlePrice === undefined ? '' : String(item.bottlePrice));
       setEditMenuIndex(index);
@@ -629,6 +649,11 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           description: i.description || '',
           image: i.imageUrl || undefined,
           price: i.bottlePrice ?? i.glassPrice ?? 0,
+          region: i.region ?? null,
+          grapes: i.grapes ?? undefined,
+          wineType: (i.wineType ?? undefined) as any,
+          glassPrice: i.glassPrice ?? null,
+          bottlePrice: i.bottlePrice ?? null,
           available: i.isActive ?? true,
         }))
       );
@@ -640,7 +665,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
   const resetMenuForm = () => {
       setNewItemName(''); setNewItemDesc(''); setNewItemPrice(''); setNewItemCategory('');
-      setNewItemRegion(''); setNewItemGlassPrice(''); setNewItemBottlePrice('');
+      setNewItemRegion(''); setNewItemWineType(''); setNewItemGrapes(''); setNewItemGlassPrice(''); setNewItemBottlePrice('');
       setNewItemImage(''); setNewItemAvailable(true);
       setEditMenuIndex(null);
   };
@@ -890,6 +915,30 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                       </option>
                     ))}
                   </select>
+
+                  {menuType === 'wine' ? (
+                    <select
+                      value={newItemWineType}
+                      onChange={(e) => setNewItemWineType(e.target.value)}
+                      className="border p-2 rounded text-sm w-full text-black"
+                    >
+                      <option value="">Tipo (opcional)</option>
+                      <option value="Blanco">Blanco</option>
+                      <option value="Tinto">Tinto</option>
+                      <option value="Doce">Doce</option>
+                      <option value="Espumoso">Espumoso</option>
+                    </select>
+                  ) : null}
+
+                  {menuType === 'wine' ? (
+                    <input
+                      type="text"
+                      placeholder="Uvas (opcional)"
+                      value={newItemGrapes}
+                      onChange={(e) => setNewItemGrapes(e.target.value)}
+                      className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
+                    />
+                  ) : null}
 
                   {menuType === 'wine' ? (
                     <input

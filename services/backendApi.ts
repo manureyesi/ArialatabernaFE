@@ -53,6 +53,8 @@ export type BackendMenuResponse = {
     description?: string | null;
     category?: string | null;
     region?: string | null;
+    wineType?: string | null;
+    grapes?: string | null;
     glassPrice?: number | null;
     bottlePrice?: number | null;
     isActive?: boolean;
@@ -286,6 +288,8 @@ export const backendApi = {
         description?: string;
         category?: string;
         region?: string | null;
+        wineType?: string | null;
+        grapes?: string | null;
         glassPrice?: number | null;
         bottlePrice?: number | null;
         imageUrl?: string;

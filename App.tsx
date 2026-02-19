@@ -103,6 +103,8 @@ const App: React.FC = () => {
             image: i.imageUrl || undefined,
             price: i.bottlePrice ?? i.glassPrice ?? 0,
             region: i.region ?? null,
+            grapes: i.grapes ?? undefined,
+            wineType: (i.wineType ?? undefined) as any,
             glassPrice: i.glassPrice ?? null,
             bottlePrice: i.bottlePrice ?? null,
             available: i.isActive ?? true,
