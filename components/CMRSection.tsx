@@ -1,7 +1,6 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { Reservation, MenuItem, EventItem, ProjectProposal, EventCategory } from '../types';
-import { COLORS, WINE_DO_ORDER } from '../constants';
+import { COLORS } from '../constants';
 import { backendApi, BasicAuth, BackendAdminMenuCategoryNode } from '../services/backendApi';
 
 interface CMRSectionProps {
@@ -79,8 +78,14 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('');
+  const [newItemRegion, setNewItemRegion] = useState('');
+  const [newItemGlassPrice, setNewItemGlassPrice] = useState('');
+  const [newItemBottlePrice, setNewItemBottlePrice] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
   const [newItemAvailable, setNewItemAvailable] = useState(true);
+
+  const [menuAvailableCategories, setMenuAvailableCategories] = useState<Array<string>>([]);
+  const [isLoadingMenuAvailableCategories, setIsLoadingMenuAvailableCategories] = useState(false);
 
   const [menuCategories, setMenuCategories] = useState<Array<BackendAdminMenuCategoryNode>>([]);
   const [isLoadingMenuCategories, setIsLoadingMenuCategories] = useState(false);
@@ -88,11 +93,6 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newMenuSubcategory, setNewMenuSubcategory] = useState('');
   const [newMenuOrden, setNewMenuOrden] = useState('1');
   
-  // Wine specific fields
-  const [newItemRegion, setNewItemRegion] = useState('');
-  const [newItemGlassPrice, setNewItemGlassPrice] = useState('');
-  const [newItemBottlePrice, setNewItemBottlePrice] = useState('');
-
   // --- EVENT MANAGEMENT STATE ---
   const [editEventId, setEditEventId] = useState<string | null>(null);
   const [newEventTitle, setNewEventTitle] = useState('');
@@ -309,6 +309,23 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     }
   }, [activeTab, auth]);
 
+  useEffect(() => {
+    if (activeTab !== 'menu') return;
+    setIsLoadingMenuAvailableCategories(true);
+    backendApi
+      .getMenuCategories(menuType === 'wine' ? 'vino' : 'cocina')
+      .then((items) => {
+        const next = Array.isArray(items) ? items.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim()) : [];
+        setMenuAvailableCategories(next);
+      })
+      .catch(() => {
+        setMenuAvailableCategories([]);
+      })
+      .finally(() => {
+        setIsLoadingMenuAvailableCategories(false);
+      });
+  }, [activeTab, menuType]);
+
   const handleCreateMenuCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) return;
@@ -401,7 +418,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           name: newItemName,
           description: newItemDesc,
           price: basePrice,
-          category: newItemCategory || (menuType === 'food' ? 'Novos' : 'Rias Baixas'),
+          category: newItemCategory,
           tags: [],
           available: newItemAvailable,
           image: newItemImage || undefined,
@@ -478,9 +495,6 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             description: i.description || '',
             image: i.imageUrl || undefined,
             price: i.bottlePrice ?? i.glassPrice ?? 0,
-            region: i.region ?? null,
-            glassPrice: i.glassPrice ?? null,
-            bottlePrice: i.bottlePrice ?? null,
             available: i.isActive ?? true,
           }))
         );
@@ -804,23 +818,39 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               <form onSubmit={handleSaveMenuItem} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                   <input type="text" placeholder="Nome" required value={newItemName} onChange={e => setNewItemName(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
                   
+                  <select
+                    required
+                    value={newItemCategory}
+                    onChange={(e) => setNewItemCategory(e.target.value)}
+                    className="border p-2 rounded text-sm w-full text-black"
+                    disabled={isLoadingMenuAvailableCategories}
+                  >
+                    <option value="">
+                      {isLoadingMenuAvailableCategories
+                        ? 'Cargando categorías...'
+                        : menuType === 'wine'
+                          ? 'Selecciona categoría'
+                          : 'Selecciona categoría'}
+                    </option>
+                    {newItemCategory && !menuAvailableCategories.includes(newItemCategory) ? (
+                      <option value={newItemCategory}>{newItemCategory}</option>
+                    ) : null}
+                    {menuAvailableCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+
                   {menuType === 'wine' ? (
-                    <>
-                      <select value={newItemCategory} onChange={e => setNewItemCategory(e.target.value)} className="border p-2 rounded text-sm w-full text-black">
-                        <option value="">Selecciona D.O.</option>
-                        {WINE_DO_ORDER.map(doName => <option key={doName} value={doName}>{doName}</option>)}
-                      </select>
-                      <input
-                        type="text"
-                        placeholder="Rexión (opcional)"
-                        value={newItemRegion}
-                        onChange={e => setNewItemRegion(e.target.value)}
-                        className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
-                      />
-                    </>
-                  ) : (
-                    <input type="text" placeholder="Categoría (Ex: Entremés)" value={newItemCategory} onChange={e => setNewItemCategory(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
-                  )}
+                    <input
+                      type="text"
+                      placeholder="Rexión (opcional)"
+                      value={newItemRegion}
+                      onChange={(e) => setNewItemRegion(e.target.value)}
+                      className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
+                    />
+                  ) : null}
 
                   <input type="text" placeholder="Descrición / Notas" required value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
                   {menuType === 'wine' ? (
