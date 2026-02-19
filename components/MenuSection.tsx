@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { MenuItem } from '../types';
-import { COLORS, WINE_DO_ORDER } from '../constants';
+import React, {useMemo, useState} from 'react';
+import {MenuItem} from '../types';
 
 interface MenuSectionProps {
   foodItems: MenuItem[];
@@ -171,9 +170,34 @@ const MenuSection: React.FC<MenuSectionProps> = ({ foodItems, wineItems, foodCat
   );
 
   const wineCategories = useMemo(() => {
-    const order = wineCategoryOrder.length > 0 ? wineCategoryOrder : WINE_DO_ORDER;
-    return ['Todos', ...order];
-  }, [wineCategoryOrder]);
+    const normalize = (v: string) => (v && v.trim() ? v.trim() : 'Outros');
+
+    const fromBackend = Array.isArray(wineCategoryOrder)
+      ? wineCategoryOrder.map(normalize).filter(Boolean)
+      : [];
+
+    const fromItems = wineItems
+      .map((w) => normalize(String(w.category ?? '')))
+      .filter(Boolean);
+
+    const seen = new Set<string>();
+    const ordered: Array<string> = [];
+
+    const pushUnique = (c: string) => {
+      if (!c) return;
+      if (seen.has(c)) return;
+      seen.add(c);
+      ordered.push(c);
+    };
+
+    fromBackend.forEach(pushUnique);
+    fromItems.forEach(pushUnique);
+
+    const withoutOutros = ordered.filter((c) => c !== 'Outros');
+    const hasOutros = ordered.includes('Outros');
+
+    return ['Todos', ...(hasOutros ? [...withoutOutros, 'Outros'] : withoutOutros)];
+  }, [wineCategoryOrder, wineItems]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8">
