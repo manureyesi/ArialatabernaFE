@@ -15,6 +15,9 @@ const App: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [eventFilter, setEventFilter] = useState<string>('Todos');
 
+  const defaultHomeHeroImageUrl =
+    'https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=2000&auto=format&fit=crop&grayscale';
+
   const sectionToPath = (section: Section): string => {
     switch (section) {
       case Section.HOME:
@@ -96,6 +99,7 @@ const App: React.FC = () => {
   const [contactPhone, setContactPhone] = useState<string>('');
   const [contactMail, setContactMail] = useState<string>('');
   const [scheduleText, setScheduleText] = useState<string>('');
+  const [homeHeroImageUrl, setHomeHeroImageUrl] = useState<string>('');
 
   // --- DATA STATE ---
   const [foodMenu, setFoodMenu] = useState<MenuItem[]>([]);
@@ -155,6 +159,11 @@ const App: React.FC = () => {
         const horario = items.find((it) => it.key === 'horario');
         if (horario) {
           setScheduleText(String(horario.value ?? '').trim());
+        }
+
+        const homeImg = items.find((it) => it.key === 'url-img-home');
+        if (homeImg) {
+          setHomeHeroImageUrl(String(homeImg.value ?? '').trim());
         }
       })
       .catch(() => {
@@ -381,7 +390,11 @@ const App: React.FC = () => {
           <div className="animate-in fade-in duration-1000">
             <section className="relative h-screen flex items-center justify-center overflow-hidden">
               <div className="absolute inset-0 z-0">
-                <img src="https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=2000&auto=format&fit=crop&grayscale" alt="A Riala Taberna Interior" className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow" />
+                <img
+                  src={homeHeroImageUrl ? homeHeroImageUrl : defaultHomeHeroImageUrl}
+                  alt="A Riala Taberna Interior"
+                  className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow"
+                />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black"></div>
               </div>
               <div className="relative z-10 text-center px-4 max-w-6xl mx-auto flex flex-col items-center">
@@ -597,8 +610,8 @@ const App: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-12 border-t border-gray-900 text-[10px] font-bold uppercase tracking-widest">
             <p>&copy; {new Date().getFullYear()} A Riala Taberna. Todos os dereitos reservados.</p>
             <div className="flex items-center gap-6">
-              <a href="https://instagram.com/arialataberna" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a>
               <button onClick={() => navigateToSection(Section.CMR)} className="border border-gray-800 px-4 py-2 hover:border-white hover:text-white transition-all">Acceso Admin</button>
+              <a href="https://instagram.com/arialataberna" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a>
             </div>
           </div>
         </div>
