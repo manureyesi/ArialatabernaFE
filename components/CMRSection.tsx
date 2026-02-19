@@ -86,7 +86,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newItemImage, setNewItemImage] = useState('');
   const [newItemAvailable, setNewItemAvailable] = useState(true);
 
-  const [wineTypeOptions, setWineTypeOptions] = useState<Array<string>>(['Branco', 'Tinto', 'Doce', 'Espumoso']);
+  const [wineTypeOptions, setWineTypeOptions] = useState<Array<string>>([]);
+  const [isLoadingWineTypeOptions, setIsLoadingWineTypeOptions] = useState(false);
 
   const [menuAvailableCategories, setMenuAvailableCategories] = useState<Array<string>>([]);
   const [isLoadingMenuAvailableCategories, setIsLoadingMenuAvailableCategories] = useState(false);
@@ -358,7 +359,12 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         setIsLoadingMenuAvailableCategories(false);
       });
 
-    if (!auth) return;
+    if (!auth) {
+      setWineTypeOptions([]);
+      setIsLoadingWineTypeOptions(false);
+      return;
+    }
+    setIsLoadingWineTypeOptions(true);
     backendApi.admin
       .listConfig(auth)
       .then((items) => {
@@ -368,12 +374,15 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean);
-        if (parsed.length > 0) setWineTypeOptions(parsed);
+        setWineTypeOptions(parsed);
       })
       .catch(() => {
         // ignore
+      })
+      .finally(() => {
+        setIsLoadingWineTypeOptions(false);
       });
-  }, [activeTab, menuType]);
+  }, [activeTab, menuType, auth]);
 
   const handleCreateMenuCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -939,8 +948,15 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                       value={newItemWineType}
                       onChange={(e) => setNewItemWineType(e.target.value)}
                       className="border p-2 rounded text-sm w-full text-black"
+                      disabled={isLoadingWineTypeOptions || wineTypeOptions.length === 0}
                     >
-                      <option value="">Tipo (opcional)</option>
+                      <option value="">
+                        {isLoadingWineTypeOptions
+                          ? 'Cargando tipos...'
+                          : wineTypeOptions.length === 0
+                            ? 'Sen tipos configurados'
+                            : 'Tipo (opcional)'}
+                      </option>
                       {wineTypeOptions.map((t) => (
                         <option key={t} value={t}>
                           {t}
