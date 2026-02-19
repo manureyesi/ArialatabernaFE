@@ -113,7 +113,7 @@ const App: React.FC = () => {
         // keep local constants as fallback
       });
 
-    Promise.all([backendApi.getMenuCategories('cocina'), backendApi.getMenuCategories('vino')])
+    Promise.all([backendApi.getMenuCategories('cocina'), backendApi.getMenuCategories('adega')])
       .then(([cocina, vino]) => {
         if (cancelled) return;
         setFoodCategoryOrder(Array.isArray(cocina) ? flattenCategoryOrder(cocina as any) : []);

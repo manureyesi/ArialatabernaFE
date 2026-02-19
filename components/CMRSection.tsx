@@ -337,7 +337,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     if (activeTab !== 'menu') return;
     setIsLoadingMenuAvailableCategories(true);
     backendApi
-      .getMenuCategories(menuType === 'wine' ? 'vino' : 'cocina')
+      .getMenuCategories(menuType === 'wine' ? 'adega' : 'cocina')
       .then((items) => {
         const next = Array.isArray(items) ? flattenMenuCategoryNodes(items as any) : [];
         setMenuAvailableCategories(next);
