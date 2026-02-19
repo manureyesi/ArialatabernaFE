@@ -60,7 +60,7 @@ export type BackendMenuResponse = {
   }>;
 };
 
-export type BackendMenuCategoriesQueryCategory = 'vino' | 'cocina';
+export type BackendMenuCategoriesQueryCategory = 'vino' | 'cocina' | 'adega';
 
 export type BackendAdminMenuCategoryNode = {
   category: string;
@@ -211,7 +211,10 @@ const extractAdminConfigList = (
 export const backendApi = {
   getMenu: () => request<BackendMenuResponse>('/api/v1/menu', 'GET'),
   getMenuCategories: (category: BackendMenuCategoriesQueryCategory) =>
-    request<Array<BackendMenuCategoryNode>>(`/api/v1/menu/categories?category=${encodeURIComponent(category)}`, 'GET'),
+    request<Array<BackendMenuCategoryNode>>(
+      `/api/v1/menu/categories?category=${encodeURIComponent(category === 'adega' ? 'vino' : category)}`,
+      'GET'
+    ),
   getConfig: () => request<Array<BackendPublicConfigItem>>('/api/v1/config', 'GET'),
   getEvents: () => request<BackendEventPublicListResponse>('/api/v1/events', 'GET').then(extractPublicEventList),
   getSchedule: (from_?: string, to?: string) => {
