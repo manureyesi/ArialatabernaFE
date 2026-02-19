@@ -95,6 +95,7 @@ const App: React.FC = () => {
   const [isReservationsEnabled, setIsReservationsEnabled] = useState<boolean>(true);
   const [contactPhone, setContactPhone] = useState<string>('');
   const [contactMail, setContactMail] = useState<string>('');
+  const [scheduleText, setScheduleText] = useState<string>('');
 
   // --- DATA STATE ---
   const [foodMenu, setFoodMenu] = useState<MenuItem[]>([]);
@@ -150,6 +151,11 @@ const App: React.FC = () => {
 
         const mail = items.find((it) => it.key === 'mail-contacto');
         if (mail) setContactMail(String(mail.value ?? '').trim());
+
+        const horario = items.find((it) => it.key === 'horario');
+        if (horario) {
+          setScheduleText(String(horario.value ?? '').trim());
+        }
       })
       .catch(() => {
         // ignore config errors
@@ -406,6 +412,16 @@ const App: React.FC = () => {
                 <p className="text-gray-400 max-w-2xl mx-auto italic text-xl leading-loose mb-12">
                   No corazón da Estrada, recuperamos a esencia das tabernas de sempre cunha ollada contemporánea. Un punto de encontro cultural onde o produto galego e os viños de autor son os protagonistas.
                 </p>
+
+                {scheduleText ? (
+                  <div className="max-w-xl mx-auto mb-14 border border-gray-900 bg-[#0a0a0a] p-8">
+                    <div className="text-[#4a5d23] font-bold tracking-[0.4em] text-xs uppercase mb-4">HORARIO</div>
+                    <div className="text-gray-300 text-sm whitespace-pre-line leading-relaxed font-medium">
+                      {scheduleText}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
                   <div>
                     <h3 className="text-[#4a5d23] font-bold uppercase tracking-widest text-xs mb-4">Cociña</h3>
