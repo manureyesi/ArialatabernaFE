@@ -162,8 +162,10 @@ const App: React.FC = () => {
         }
 
         const homeImg = items.find((it) => it.key === 'url-img-home');
-        if (homeImg) {
-          setHomeHeroImageUrl(String(homeImg.value ?? '').trim());
+        const homeImgTypo = items.find((it) => it.key === 'url-img-hone');
+        const resolvedHomeImg = homeImg ?? homeImgTypo;
+        if (resolvedHomeImg) {
+          setHomeHeroImageUrl(String(resolvedHomeImg.value ?? '').trim());
         }
       })
       .catch(() => {
