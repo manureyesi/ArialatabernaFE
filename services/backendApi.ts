@@ -60,6 +60,13 @@ export type BackendMenuResponse = {
   }>;
 };
 
+export type BackendAdminMenuCategoryNode = {
+  category: string;
+  subcategory: string | null;
+  orden: number;
+  children: Array<BackendAdminMenuCategoryNode>;
+};
+
 export type BackendAvailabilityResponse = {
   date: string;
   partySize: number;
@@ -272,6 +279,9 @@ export const backendApi = {
     ) => {
       return request<{ id: string }>('/admin/menu/wines', 'POST', payload, auth);
     },
+    listMenuCategories: (auth: BasicAuth) => request<Array<BackendAdminMenuCategoryNode>>('/admin/menu/categories', 'GET', undefined, auth),
+    createMenuCategory: (auth: BasicAuth, payload: { category: string; subcategory?: string | null; orden: number }) =>
+      request<void>('/admin/menu/categories', 'POST', payload, auth),
     upsertScheduleDay: (auth: BasicAuth, payload: { date: string; open?: boolean; note?: string }) => {
       const qs = new URLSearchParams();
       qs.set('date', payload.date);

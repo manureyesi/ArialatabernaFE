@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Reservation, MenuItem, EventItem, ProjectProposal, EventCategory } from '../types';
 import { COLORS, WINE_DO_ORDER } from '../constants';
-import { backendApi, BasicAuth } from '../services/backendApi';
+import { backendApi, BasicAuth, BackendAdminMenuCategoryNode } from '../services/backendApi';
 
 interface CMRSectionProps {
   reservations: Reservation[];
@@ -81,6 +81,12 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newItemCategory, setNewItemCategory] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
   const [newItemAvailable, setNewItemAvailable] = useState(true);
+
+  const [menuCategories, setMenuCategories] = useState<Array<BackendAdminMenuCategoryNode>>([]);
+  const [isLoadingMenuCategories, setIsLoadingMenuCategories] = useState(false);
+  const [newMenuCategory, setNewMenuCategory] = useState('');
+  const [newMenuSubcategory, setNewMenuSubcategory] = useState('');
+  const [newMenuOrden, setNewMenuOrden] = useState('1');
   
   // Wine specific fields
   const [newItemRegion, setNewItemRegion] = useState('');
@@ -179,6 +185,19 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         .catch(() => {
           // ignore
         });
+
+      setIsLoadingMenuCategories(true);
+      backendApi.admin
+        .listMenuCategories(auth)
+        .then((items) => {
+          setMenuCategories(items || []);
+        })
+        .catch(() => {
+          setMenuCategories([]);
+        })
+        .finally(() => {
+          setIsLoadingMenuCategories(false);
+        });
     }
 
     if (activeTab === 'events') {
@@ -247,13 +266,29 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           setIsLoadingAdminConfig(false);
         });
     }
-  }, [activeTab, auth, setEvents, setFoodMenu, setWineMenu]);
+  }, [activeTab, auth]);
 
-  // Unique customers logic
-  const uniqueCustomers = Array.from(new Set(reservations.map(r => r.email)))
-    .map(email => {
-      return reservations.find(r => r.email === email);
-    }).filter(Boolean) as Reservation[];
+  const handleCreateMenuCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) return;
+
+    const payload = {
+      category: newMenuCategory.trim(),
+      subcategory: newMenuSubcategory.trim() ? newMenuSubcategory.trim() : null,
+      orden: Number(newMenuOrden || 1),
+    };
+
+    try {
+      await backendApi.admin.createMenuCategory(auth, payload);
+      const items = await backendApi.admin.listMenuCategories(auth);
+      setMenuCategories(items || []);
+      setNewMenuCategory('');
+      setNewMenuSubcategory('');
+      setNewMenuOrden('1');
+    } catch {
+      // ignore
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -881,6 +916,73 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                       ))}
                   </tbody>
               </table>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-10">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Categorías do menú</h3>
+
+            <form onSubmit={handleCreateMenuCategory} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-8">
+              <input
+                type="text"
+                placeholder="Categoría (Ex: vino / comida)"
+                required
+                value={newMenuCategory}
+                onChange={(e) => setNewMenuCategory(e.target.value)}
+                className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Subcategoría (opcional)"
+                value={newMenuSubcategory}
+                onChange={(e) => setNewMenuSubcategory(e.target.value)}
+                className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
+              />
+              <input
+                type="number"
+                placeholder="Orden"
+                required
+                value={newMenuOrden}
+                onChange={(e) => setNewMenuOrden(e.target.value)}
+                className="border p-2 rounded text-sm w-full text-black placeholder-gray-400"
+              />
+              <button type="submit" className="bg-gray-900 hover:bg-gray-800 text-white p-2 rounded text-sm font-bold uppercase">
+                Gardar
+              </button>
+            </form>
+
+            {isLoadingMenuCategories ? (
+              <div className="text-sm text-gray-400 italic">Cargando categorías...</div>
+            ) : menuCategories.length === 0 ? (
+              <div className="text-sm text-gray-400 italic">Non hai categorías.</div>
+            ) : (
+              <div className="space-y-3">
+                {menuCategories
+                  .slice()
+                  .sort((a, b) => Number(a.orden ?? 0) - Number(b.orden ?? 0))
+                  .map((cat) => (
+                    <div key={`${cat.category}-${cat.subcategory ?? 'root'}`} className="border border-gray-100 rounded p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-bold text-black uppercase tracking-wider">{cat.category}</div>
+                        <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Orden: {cat.orden}</div>
+                      </div>
+
+                      {cat.children && cat.children.length > 0 && (
+                        <div className="mt-3 pl-4 border-l border-gray-200 space-y-2">
+                          {cat.children
+                            .slice()
+                            .sort((a, b) => Number(a.orden ?? 0) - Number(b.orden ?? 0))
+                            .map((sub) => (
+                              <div key={`${sub.category}-${sub.subcategory ?? 'root'}`} className="flex items-center justify-between">
+                                <div className="text-sm text-gray-800">{sub.subcategory}</div>
+                                <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Orden: {sub.orden}</div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
       </div>
   );
