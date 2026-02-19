@@ -252,35 +252,35 @@ export const backendApi = {
 
   admin: {
     listConfig: (auth: BasicAuth) =>
-      request<BackendAdminConfigListResponse | Array<BackendAdminConfigItem>>('/admin/config', 'GET', undefined, auth).then(extractAdminConfigList),
+      request<BackendAdminConfigListResponse | Array<BackendAdminConfigItem>>('/api/v1/admin/config', 'GET', undefined, auth).then(extractAdminConfigList),
     setConfig: (auth: BasicAuth, key: string, value: string) =>
-      request<{ key: string; value: string }>(`/admin/config/${encodeURIComponent(key)}`, 'PUT', { key, value }, auth),
-    deleteMenuItem: (auth: BasicAuth, itemId: string) => request<void>(`/admin/menu/${encodeURIComponent(itemId)}`, 'DELETE', undefined, auth),
+      request<{ key: string; value: string }>(`/api/v1/admin/config/${encodeURIComponent(key)}`, 'PUT', { key, value }, auth),
+    deleteMenuItem: (auth: BasicAuth, itemId: string) => request<void>(`/api/v1/admin/menu/${encodeURIComponent(itemId)}`, 'DELETE', undefined, auth),
     updateMenuItem: (auth: BasicAuth, itemId: string, payload: Record<string, unknown>) =>
-      request<void>(`/admin/menu/${encodeURIComponent(itemId)}`, 'PUT', payload, auth),
+      request<void>(`/api/v1/admin/menu/${encodeURIComponent(itemId)}`, 'PUT', payload, auth),
     listProjectContacts: (auth: BasicAuth, limit = 100, offset = 0) =>
       request<BackendAdminProjectContactListResponse>(
-        `/admin/contacts/projects?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
+        `/api/v1/admin/contacts/projects?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
         'GET',
         undefined,
         auth
       ),
     getProjectContactsStats: (auth: BasicAuth) =>
-      request<BackendAdminProjectContactStatsResponse>('/admin/contacts/projects/stats', 'GET', undefined, auth),
+      request<BackendAdminProjectContactStatsResponse>('/api/v1/admin/contacts/projects/stats', 'GET', undefined, auth),
     markProjectContactRead: (auth: BasicAuth, id: string) =>
-      request<void>(`/admin/contacts/projects/${encodeURIComponent(id)}/read`, 'POST', undefined, auth),
-    listEvents: (auth: BasicAuth) => request<BackendEventAdminListResponse>('/admin/events', 'GET', undefined, auth).then(extractAdminEventList),
-    createEvent: (auth: BasicAuth, payload: BackendEventCreatePayload) => request<{ id: string }>('/admin/events', 'POST', payload, auth),
+      request<void>(`/api/v1/admin/contacts/projects/${encodeURIComponent(id)}/read`, 'POST', undefined, auth),
+    listEvents: (auth: BasicAuth) => request<BackendEventAdminListResponse>('/api/v1/admin/events', 'GET', undefined, auth).then(extractAdminEventList),
+    createEvent: (auth: BasicAuth, payload: BackendEventCreatePayload) => request<{ id: string }>('/api/v1/admin/events', 'POST', payload, auth),
     updateEvent: (auth: BasicAuth, id: string, payload: BackendEventUpdatePayload) =>
-      request<void>(`/admin/events/${encodeURIComponent(id)}`, 'PUT', payload, auth),
-    deleteEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}`, 'DELETE', undefined, auth),
-    publishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/publish`, 'POST', undefined, auth),
-    unpublishEvent: (auth: BasicAuth, id: string) => request<void>(`/admin/events/${encodeURIComponent(id)}/unpublish`, 'POST', undefined, auth),
+      request<void>(`/api/v1/admin/events/${encodeURIComponent(id)}`, 'PUT', payload, auth),
+    deleteEvent: (auth: BasicAuth, id: string) => request<void>(`/api/v1/admin/events/${encodeURIComponent(id)}`, 'DELETE', undefined, auth),
+    publishEvent: (auth: BasicAuth, id: string) => request<void>(`/api/v1/admin/events/${encodeURIComponent(id)}/publish`, 'POST', undefined, auth),
+    unpublishEvent: (auth: BasicAuth, id: string) => request<void>(`/api/v1/admin/events/${encodeURIComponent(id)}/unpublish`, 'POST', undefined, auth),
     createFood: (
       auth: BasicAuth,
       payload: { name: string; description?: string; category?: string; price?: number; imageUrl?: string; isActive?: boolean }
     ) =>
-      request<{ id: string }>('/admin/menu/food', 'POST', payload, auth),
+      request<{ id: string }>('/api/v1/admin/menu/food', 'POST', payload, auth),
     createWine: (
       auth: BasicAuth,
       payload: {
@@ -296,26 +296,26 @@ export const backendApi = {
         isActive?: boolean;
       }
     ) => {
-      return request<{ id: string }>('/admin/menu/wines', 'POST', payload, auth);
+      return request<{ id: string }>('/api/v1/admin/menu/wines', 'POST', payload, auth);
     },
-    listMenuCategories: (auth: BasicAuth) => request<Array<BackendAdminMenuCategoryNode>>('/admin/menu/categories', 'GET', undefined, auth),
+    listMenuCategories: (auth: BasicAuth) => request<Array<BackendAdminMenuCategoryNode>>('/api/v1/admin/menu/categories', 'GET', undefined, auth),
     createMenuCategory: (auth: BasicAuth, payload: { category: string; subcategory?: string | null; orden: number }) =>
-      request<void>('/admin/menu/categories', 'POST', payload, auth),
+      request<void>('/api/v1/admin/menu/categories', 'POST', payload, auth),
     deleteMenuCategory: (auth: BasicAuth, id: number | string) =>
-      request<void>(`/admin/menu/categories/${encodeURIComponent(String(id))}`, 'DELETE', undefined, auth),
+      request<void>(`/api/v1/admin/menu/categories/${encodeURIComponent(String(id))}`, 'DELETE', undefined, auth),
     upsertScheduleDay: (auth: BasicAuth, payload: { date: string; open?: boolean; note?: string }) => {
       const qs = new URLSearchParams();
       qs.set('date', payload.date);
       if (payload.open !== undefined) qs.set('open', String(payload.open));
       if (payload.note) qs.set('note', payload.note);
-      return request<any>(`/admin/schedule/day?${qs.toString()}`, 'POST', undefined, auth);
+      return request<any>(`/api/v1/admin/schedule/day?${qs.toString()}`, 'POST', undefined, auth);
     },
     addServiceWindow: (auth: BasicAuth, payload: { date: string; start: string; end: string }) => {
       const qs = new URLSearchParams();
       qs.set('date', payload.date);
       qs.set('start', payload.start);
       qs.set('end', payload.end);
-      return request<any>(`/admin/schedule/window?${qs.toString()}`, 'POST', undefined, auth);
+      return request<any>(`/api/v1/admin/schedule/window?${qs.toString()}`, 'POST', undefined, auth);
     },
   },
 };
