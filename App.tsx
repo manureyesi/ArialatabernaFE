@@ -22,12 +22,35 @@ const App: React.FC = () => {
   // --- DATA STATE ---
   const [foodMenu, setFoodMenu] = useState<MenuItem[]>([]);
   const [wineMenu, setWineMenu] = useState<MenuItem[]>([]);
+  const [foodCategoryOrder, setFoodCategoryOrder] = useState<Array<string>>([]);
+  const [wineCategoryOrder, setWineCategoryOrder] = useState<Array<string>>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [proposals, setProposals] = useState<ProjectProposal[]>([]);
 
   useEffect(() => {
     let cancelled = false;
+
+    const flattenCategoryOrder = (nodes: Array<{ category: string; subcategory: string | null; orden: number; children: any[] }>): Array<string> => {
+      const acc: Array<{ label: string; orden: number }> = [];
+
+      const walk = (items: Array<{ category: string; subcategory: string | null; orden: number; children: any[] }>) => {
+        items.forEach((n) => {
+          const label = (n.subcategory ?? '').trim();
+          if (label) {
+            acc.push({ label, orden: Number(n.orden ?? 0) });
+          }
+          if (Array.isArray(n.children) && n.children.length > 0) {
+            walk(n.children as any);
+          }
+        });
+      };
+
+      walk(nodes);
+      return acc
+        .sort((a, b) => (a.orden - b.orden) || a.label.localeCompare(b.label))
+        .map((it) => it.label);
+    };
 
     backendApi
       .getConfig()
@@ -88,6 +111,18 @@ const App: React.FC = () => {
       })
       .catch(() => {
         // keep local constants as fallback
+      });
+
+    Promise.all([backendApi.getMenuCategories('cocina'), backendApi.getMenuCategories('vino')])
+      .then(([cocina, vino]) => {
+        if (cancelled) return;
+        setFoodCategoryOrder(Array.isArray(cocina) ? flattenCategoryOrder(cocina as any) : []);
+        setWineCategoryOrder(Array.isArray(vino) ? flattenCategoryOrder(vino as any) : []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFoodCategoryOrder([]);
+        setWineCategoryOrder([]);
       });
 
     backendApi
@@ -363,7 +398,16 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {activeSection === Section.MENU && <div className="pt-40 pb-32 bg-white min-h-screen"><MenuSection foodItems={foodMenu} wineItems={wineMenu} /></div>}
+        {activeSection === Section.MENU && (
+          <div className="pt-40 pb-32 bg-white min-h-screen">
+            <MenuSection
+              foodItems={foodMenu}
+              wineItems={wineMenu}
+              foodCategoryOrder={foodCategoryOrder}
+              wineCategoryOrder={wineCategoryOrder}
+            />
+          </div>
+        )}
         
         {activeSection === Section.RESERVATIONS && (
           <div className="pt-40 pb-32 px-6 bg-black min-h-screen flex items-center">
