@@ -112,6 +112,47 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const todayReservations = reservations.filter(r => r.date === today && r.status === 'confirmed').length;
   const newProposalsCount = proposals.filter(p => p.status === 'new').length;
 
+  type CustomerRow = {
+    name: string;
+    email: string;
+    phone: string;
+    date: string;
+    createdAt: string;
+  };
+
+  const uniqueCustomers = useMemo<Array<CustomerRow>>(() => {
+    const byEmail = new Map<string, CustomerRow>();
+
+    reservations.forEach((r) => {
+      const key = String(r.email || '').trim().toLowerCase();
+      if (!key) return;
+
+      const next: CustomerRow = {
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        date: `${r.date} ${r.time}`,
+        createdAt: r.createdAt,
+      };
+
+      const prev = byEmail.get(key);
+      if (!prev) {
+        byEmail.set(key, next);
+        return;
+      }
+
+      const prevTs = new Date(prev.createdAt).getTime();
+      const nextTs = new Date(next.createdAt).getTime();
+      if (Number.isFinite(nextTs) && (!Number.isFinite(prevTs) || nextTs > prevTs)) {
+        byEmail.set(key, next);
+      }
+    });
+
+    return Array.from(byEmail.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [reservations]);
+
   const projectContactsNewCount = useMemo(() => projectContacts.length, [projectContacts]);
 
   useEffect(() => {
@@ -1313,7 +1354,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             <tr><th className="px-6 py-4">Nome</th><th className="px-6 py-4">Email</th><th className="px-6 py-4">Teléfono</th><th className="px-6 py-4">Última Visita</th></tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {uniqueCustomers.map((cust) => (
+            {uniqueCustomers.map((cust: CustomerRow) => (
                 <tr key={cust.email} className="hover:bg-gray-50"><td className="px-6 py-4 font-bold text-gray-900">{cust.name}</td><td className="px-6 py-4 text-gray-600">{cust.email}</td><td className="px-6 py-4 text-gray-600">{cust.phone}</td><td className="px-6 py-4 text-gray-400">{cust.date}</td></tr>
             ))}
           </tbody>
