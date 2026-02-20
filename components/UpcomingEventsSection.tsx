@@ -21,16 +21,18 @@ const UpcomingEventsSection: React.FC<UpcomingEventsSectionProps> = ({
   title = 'PRÓXIMOS ENCONTROS',
 }) => {
   const upcoming = useMemo(() => {
-    const now = Date.now();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
     return (events || [])
       .filter((e) => {
         if (e.isPublished === false) return false;
         const t = toDateValue(e);
         if (!Number.isFinite(t)) return false;
-        return t >= now - 1000 * 60 * 60;
+        return t >= todayStartMs;
       })
       .sort((a, b) => toDateValue(a) - toDateValue(b))
-      .slice(0, 10);
+      .slice(0, 3);
   }, [events]);
 
   if (!upcoming.length) return null;

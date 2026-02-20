@@ -419,10 +419,15 @@ const App: React.FC = () => {
                   "Un espazo onde o tempo se detén entre viños e conversas."
                 </p>
                 <div className="flex flex-col md:flex-row gap-8 justify-center animate-in slide-in-from-bottom duration-1000 delay-700">
-                  <button onClick={() => navigateToSection(Section.RESERVATIONS)} className="group relative overflow-hidden border-2 border-white px-12 py-5 uppercase tracking-widest text-sm font-bold transition-all duration-300 hover:text-black">
-                    <span className="relative z-10">Reservar Mesa</span>
-                    <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                  </button>
+                  {isReservationsEnabled && (
+                    <button
+                      onClick={() => navigateToSection(Section.RESERVATIONS)}
+                      className="group relative overflow-hidden border-2 border-white px-12 py-5 uppercase tracking-widest text-sm font-bold transition-all duration-300 hover:text-black"
+                    >
+                      <span className="relative z-10">Reservar Mesa</span>
+                      <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                    </button>
+                  )}
                   <button onClick={() => navigateToSection(Section.MENU)} className="bg-[#4a5d23] hover:bg-[#5b722d] text-white px-12 py-5 uppercase tracking-widest text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-[#4a5d23]/20">
                     Descubrir a Carta
                   </button>
