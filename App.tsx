@@ -410,12 +410,12 @@ const App: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black"></div>
               </div>
               <div className="relative z-10 text-center px-4 max-w-6xl mx-auto flex flex-col items-center">
-                <h2 className="text-sm md:text-base uppercase tracking-[0.6em] mb-8 text-white/70 font-light animate-in slide-in-from-top duration-1000">Gastronomía Galega · Cultura · Viños</h2>
+                <h2 className="text-sm md:text-base uppercase tracking-[0.6em] mb-8 text-white/70 font-light animate-in slide-in-from-top duration-1000">Gastronomía · Cultura · Viños</h2>
                 <div className="mb-14 w-full animate-in zoom-in duration-1000 delay-200">
                   <Logo className="drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] scale-110 md:scale-150" />
                 </div>
                 <p className="text-xl md:text-3xl font-light max-w-3xl mx-auto mb-14 text-gray-100 leading-relaxed italic animate-in fade-in duration-1000 delay-500">
-                  "Onde o tempo detense entre conversas e o mellor da nosa terra."
+                  "Un espazo onde o tempo se detén entre viños e conversas."
                 </p>
                 <div className="flex flex-col md:flex-row gap-8 justify-center animate-in slide-in-from-bottom duration-1000 delay-700">
                   <button onClick={() => navigateToSection(Section.RESERVATIONS)} className="group relative overflow-hidden border-2 border-white px-12 py-5 uppercase tracking-widest text-sm font-bold transition-all duration-300 hover:text-black">
