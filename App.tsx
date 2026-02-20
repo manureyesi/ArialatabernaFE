@@ -7,6 +7,7 @@ import ProjectSection from './components/ProjectSection';
 import LegalSection from './components/LegalSection';
 import CookieBanner from './components/CookieBanner';
 import Logo from './components/Logo';
+import UpcomingEventsSection from './components/UpcomingEventsSection';
 import { Section, MenuItem, EventItem, Reservation, ProjectProposal } from './types';
 import { backendApi } from './services/backendApi';
 
@@ -463,6 +464,20 @@ const App: React.FC = () => {
                 </div>
               </div>
             </section>
+
+            <section className="py-24 px-6 bg-black">
+              <div className="max-w-5xl mx-auto text-center">
+                <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight leading-tight">
+                  A RIALA TABERNA NON É SÓ UN SITIO ONDE COMER OU BEBER: É UN LUGAR ONDE PASAR, QUEDAR... E VOLVER.
+                </h2>
+              </div>
+            </section>
+
+            <UpcomingEventsSection
+              events={events}
+              onEventClick={(ev) => setSelectedEvent(ev)}
+              onSeeAll={() => navigateToSection(Section.EVENTS)}
+            />
           </div>
         )}
 
