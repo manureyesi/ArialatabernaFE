@@ -285,6 +285,7 @@ const App: React.FC = () => {
   const [formObservations, setFormObservations] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
   const [formError, setFormError] = useState('');
+  const [isSubmittingReservation, setIsSubmittingReservation] = useState(false);
 
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
@@ -316,6 +317,7 @@ const App: React.FC = () => {
   const handleReservationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isReservationsEnabled) return;
+    if (isSubmittingReservation) return;
 
     setFormError('');
     if (!formEmail.trim()) {
@@ -340,6 +342,7 @@ const App: React.FC = () => {
     const apiDate = `${dd}-${mm}-${yyyy}`;
 
     try {
+      setIsSubmittingReservation(true);
       const out = await backendApi.createReservation({
         date: apiDate,
         time: formTime,
@@ -376,6 +379,8 @@ const App: React.FC = () => {
     } catch {
       setFormSuccess(false);
       setFormError('Non se puido completar a reserva. Revisa os datos e téntao de novo.');
+    } finally {
+      setIsSubmittingReservation(false);
     }
   };
 
@@ -603,11 +608,11 @@ const App: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Data</label>
-                          <input type="date" required value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
+                          <input type="date" required value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation} />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Hora</label>
-                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || !formDate || isLoadingAvailability || availableTimes.length === 0}>
+                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation || !formDate || isLoadingAvailability || availableTimes.length === 0}>
                               <option value="">{formDate ? (isLoadingAvailability ? 'Cargando...' : (availableTimes.length > 0 ? 'Escoller' : 'Non dispoñible')) : '—'}</option>
                               {availableTimes.map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
@@ -616,17 +621,24 @@ const App: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Comensais</label>
-                          <input type="number" min="1" max="8" required value={formGuests} onChange={e => setFormGuests(parseInt(e.target.value))} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
+                          <input type="number" min="1" max="8" required value={formGuests} onChange={e => setFormGuests(parseInt(e.target.value))} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation} />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Nome</label>
-                          <input type="text" placeholder="O teu nome" required value={formName} onChange={e => setFormName(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
+                          <input type="text" placeholder="O teu nome" required value={formName} onChange={e => setFormName(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation} />
                         </div>
                       </div>
-                      <input type="email" placeholder="Correo electrónico" required value={formEmail} onChange={e => setFormEmail(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
-                      <input type="tel" placeholder="Teléfono" value={formPhone} onChange={e => setFormPhone(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
-                      <textarea placeholder="Comentarios" value={formObservations} onChange={e => setFormObservations(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors min-h-[120px] resize-y" disabled={!isReservationsEnabled} />
-                      <button type="submit" className="w-full bg-[#4a5d23] py-5 uppercase font-black tracking-widest hover:bg-[#5b722d] transition-all shadow-xl disabled:opacity-30 disabled:hover:bg-[#4a5d23]" disabled={!isReservationsEnabled}>Solicitar Confirmación</button>
+                      <input type="email" placeholder="Correo electrónico" required value={formEmail} onChange={e => setFormEmail(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation} />
+                      <input type="tel" placeholder="Teléfono" value={formPhone} onChange={e => setFormPhone(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation} />
+                      <textarea placeholder="Comentarios" value={formObservations} onChange={e => setFormObservations(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors min-h-[120px] resize-y" disabled={!isReservationsEnabled || isSubmittingReservation} />
+                      <button type="submit" className="w-full bg-[#4a5d23] py-5 uppercase font-black tracking-widest hover:bg-[#5b722d] transition-all shadow-xl disabled:opacity-30 disabled:hover:bg-[#4a5d23]" disabled={!isReservationsEnabled || isSubmittingReservation}>
+                        {isSubmittingReservation ? 'Enviando...' : 'Solicitar Confirmación'}
+                      </button>
+                      {isSubmittingReservation && (
+                        <div className="text-center text-sm text-gray-600 italic">
+                          Enviando a túa solicitude, agarda un intre...
+                        </div>
+                      )}
                       {formError && (
                         <div className="border border-red-200 bg-red-50 text-red-700 p-4 text-sm">
                           {formError}
