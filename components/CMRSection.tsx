@@ -148,13 +148,6 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [newEventIsPublished, setNewEventIsPublished] = useState(true);
   const [newEventCat, setNewEventCat] = useState<EventCategory>('Concerto');
 
-  // Stats
-  const pendingCount = reservations.filter(r => r.status === 'pending').length;
-  const confirmedCount = reservations.filter(r => r.status === 'confirmed').length;
-  const today = new Date().toISOString().split('T')[0];
-  const todayReservations = reservations.filter(r => r.date === today && r.status === 'confirmed').length;
-  const newProposalsCount = proposals.filter(p => p.status === 'new').length;
-
   const mappedAdminReservations = useMemo<Array<Reservation>>(() => {
     return (adminReservations || []).map((r) => {
       const mappedStatus: Reservation['status'] =
@@ -175,6 +168,13 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   }, [adminReservations]);
 
   const reservationsForUi = auth ? mappedAdminReservations : reservations;
+
+  // Stats
+  const pendingCount = reservationsForUi.filter((r) => r.status === 'pending').length;
+  const confirmedCount = reservationsForUi.filter((r) => r.status === 'confirmed').length;
+  const today = new Date().toISOString().split('T')[0];
+  const todayReservations = reservationsForUi.filter((r) => r.date === today && r.status === 'confirmed').length;
+  const newProposalsCount = proposals.filter((p) => p.status === 'new').length;
 
   const refreshAdminReservations = async (nextAuth: BasicAuth) => {
     setIsLoadingAdminReservations(true);
@@ -1536,6 +1536,79 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
   const renderReservationsTable = () => (
     <div className="space-y-4">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+              <tr>
+                <th className="px-6 py-4">Estado</th>
+                <th className="px-6 py-4">Data / Hora</th>
+                <th className="px-6 py-4">Cliente</th>
+                <th className="px-6 py-4">Pax</th>
+                <th className="px-6 py-4">Observacións</th>
+                <th className="px-6 py-4">Contacto</th>
+                <th className="px-6 py-4 text-right">Accións</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {reservationsForUi.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((res) => (
+                <tr key={res.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider ${res.status === 'confirmed' ? 'bg-green-100 text-green-800' : res.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'}`}>{res.status === 'pending' ? 'Pendente' : res.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}</span></td>
+                  <td className="px-6 py-4 text-gray-900 font-medium whitespace-nowrap">{res.date} <span className="text-gray-400">|</span> {res.time}</td>
+                  <td className="px-6 py-4 text-gray-900 font-bold">{res.name}</td>
+                  <td className="px-6 py-4 text-gray-900">{res.guests}</td>
+                  <td className="px-6 py-4 text-gray-600 max-w-xs text-xs italic">{res.observations || '—'}</td>
+                  <td className="px-6 py-4 text-gray-500"><div className="flex flex-col"><span>{res.phone}</span><span className="text-xs">{res.email}</span></div></td>
+                  <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                    {auth && res.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={async () => {
+                            if (!auth) return;
+                            try {
+                              await backendApi.admin.confirmReservation(auth, res.id);
+                              await refreshAdminReservations(auth);
+                            } catch {
+                              setAdminReservationsMessage('Non se puido confirmar a reserva.');
+                            }
+                          }}
+                          className="text-green-600 hover:text-green-800 font-bold text-xs uppercase"
+                        >
+                          Aceptar
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!auth) return;
+                            const reason = window.prompt('Motivo da cancelación', 'Non temos sitio') ?? '';
+                            if (!reason.trim()) return;
+                            try {
+                              await backendApi.admin.cancelReservation(auth, res.id, reason.trim());
+                              await refreshAdminReservations(auth);
+                            } catch {
+                              setAdminReservationsMessage('Non se puido cancelar a reserva.');
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 font-bold text-xs uppercase"
+                        >
+                          Rexeitar
+                        </button>
+                      </>
+                    )}
+                    {!auth && (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
+                    {auth && res.status !== 'pending' && (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {reservationsForUi.length === 0 && <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400 italic">Non hai reservas rexistradas.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {activeTab === 'reservations' && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex flex-col lg:flex-row lg:items-end gap-4 justify-between">
@@ -1665,87 +1738,8 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               </div>
             )}
           </div>
-
-          {(isLoadingAdminReservations || adminReservationsMessage) && (
-            <div className="mt-4 text-sm text-gray-600">
-              {isLoadingAdminReservations ? 'Cargando reservas...' : adminReservationsMessage}
-            </div>
-          )}
         </div>
       )}
-
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-              <tr>
-                <th className="px-6 py-4">Estado</th>
-                <th className="px-6 py-4">Data / Hora</th>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4">Pax</th>
-                <th className="px-6 py-4">Observacións</th>
-                <th className="px-6 py-4">Contacto</th>
-                <th className="px-6 py-4 text-right">Accións</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {reservationsForUi.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((res) => (
-                <tr key={res.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider ${res.status === 'confirmed' ? 'bg-green-100 text-green-800' : res.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'}`}>{res.status === 'pending' ? 'Pendente' : res.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}</span></td>
-                  <td className="px-6 py-4 text-gray-900 font-medium whitespace-nowrap">{res.date} <span className="text-gray-400">|</span> {res.time}</td>
-                  <td className="px-6 py-4 text-gray-900 font-bold">{res.name}</td>
-                  <td className="px-6 py-4 text-gray-900">{res.guests}</td>
-                  <td className="px-6 py-4 text-gray-600 max-w-xs text-xs italic">{res.observations || '—'}</td>
-                  <td className="px-6 py-4 text-gray-500"><div className="flex flex-col"><span>{res.phone}</span><span className="text-xs">{res.email}</span></div></td>
-                  <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                    {auth && res.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={async () => {
-                            if (!auth) return;
-                            try {
-                              await backendApi.admin.confirmReservation(auth, res.id);
-                              await refreshAdminReservations(auth);
-                            } catch {
-                              setAdminReservationsMessage('Non se puido confirmar a reserva.');
-                            }
-                          }}
-                          className="text-green-600 hover:text-green-800 font-bold text-xs uppercase"
-                        >
-                          Aceptar
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (!auth) return;
-                            const reason = window.prompt('Motivo da cancelación', 'Non temos sitio') ?? '';
-                            if (!reason.trim()) return;
-                            try {
-                              await backendApi.admin.cancelReservation(auth, res.id, reason.trim());
-                              await refreshAdminReservations(auth);
-                            } catch {
-                              setAdminReservationsMessage('Non se puido cancelar a reserva.');
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-800 font-bold text-xs uppercase"
-                        >
-                          Rexeitar
-                        </button>
-                      </>
-                    )}
-                    {!auth && (
-                      <span className="text-gray-400 text-xs">—</span>
-                    )}
-                    {auth && res.status !== 'pending' && (
-                      <span className="text-gray-400 text-xs">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {reservationsForUi.length === 0 && <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400 italic">Non hai reservas rexistradas.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 
