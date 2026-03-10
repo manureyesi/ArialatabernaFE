@@ -9,10 +9,17 @@ import CookieBanner from './components/CookieBanner';
 import Logo from './components/Logo';
 import UpcomingEventsSection from './components/UpcomingEventsSection';
 import { Section, MenuItem, EventItem, Reservation, ProjectProposal } from './types';
-import { backendApi } from './services/backendApi';
+import { backendApi, BackendReservationOut } from './services/backendApi';
 
 const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<Section>(Section.HOME);
+  const [reservationDetailId, setReservationDetailId] = useState<string | null>(null);
+  const [reservationDetail, setReservationDetail] = useState<BackendReservationOut | null>(null);
+  const [isLoadingReservationDetail, setIsLoadingReservationDetail] = useState(false);
+  const [reservationDetailError, setReservationDetailError] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancellingReservation, setIsCancellingReservation] = useState(false);
+  const [cancelReservationMessage, setCancelReservationMessage] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [eventFilter, setEventFilter] = useState<string>('Todos');
 
@@ -46,12 +53,23 @@ const App: React.FC = () => {
     }
   };
 
+  const getReservationIdFromPath = (pathname: string): string | null => {
+    const raw = String(pathname || '/').trim();
+    const m = /^\/reservas\/([^/]+)\/?$/.exec(raw);
+    if (!m) return null;
+    try {
+      return decodeURIComponent(m[1]);
+    } catch {
+      return m[1];
+    }
+  };
+
   const pathToSection = (pathname: string): Section => {
     const clean = String(pathname || '/').trim().toLowerCase();
     if (clean === '/' || clean === '/home') return Section.HOME;
     if (clean === '/axenda') return Section.EVENTS;
     if (clean === '/carta') return Section.MENU;
-    if (clean === '/reservas') return Section.RESERVATIONS;
+    if (clean === '/reservas' || clean.startsWith('/reservas/')) return Section.RESERVATIONS;
     if (clean === '/proxectos') return Section.PROJECTS;
     if (clean === '/equipo' || clean === '/traballa') return Section.CAREERS;
     if (clean === '/legal') return Section.LEGAL;
@@ -82,19 +100,59 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const initial = pathToSection(window.location.pathname);
+    const initialPath = window.location.pathname;
+    const initialReservationId = getReservationIdFromPath(initialPath);
+    setReservationDetailId(initialReservationId);
+    const initial = pathToSection(initialPath);
     if (initial !== activeSection) {
       setActiveSection(initial);
     }
 
     const onPopState = () => {
-      const next = pathToSection(window.location.pathname);
+      const path = window.location.pathname;
+      setReservationDetailId(getReservationIdFromPath(path));
+      const next = pathToSection(path);
       setActiveSection(next);
     };
 
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  useEffect(() => {
+    if (!reservationDetailId) {
+      setReservationDetail(null);
+      setReservationDetailError('');
+      setCancelReason('');
+      setCancelReservationMessage('');
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingReservationDetail(true);
+    setReservationDetailError('');
+    setCancelReservationMessage('');
+
+    backendApi
+      .getReservation(reservationDetailId)
+      .then((res) => {
+        if (cancelled) return;
+        setReservationDetail(res);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setReservationDetail(null);
+        setReservationDetailError('Non se puido cargar a reserva.');
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsLoadingReservationDetail(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reservationDetailId]);
 
   const [isReservationsEnabled, setIsReservationsEnabled] = useState<boolean>(true);
   const [contactPhone, setContactPhone] = useState<string>('');
@@ -417,6 +475,138 @@ const App: React.FC = () => {
         proposals={proposals} setProposals={setProposals}
         onExit={() => navigateToSection(Section.HOME)}
       />
+    );
+  }
+
+  if (activeSection === Section.RESERVATIONS && reservationDetailId) {
+    const canCancel = reservationDetail?.status === 'PENDING' || reservationDetail?.status === 'CONFIRMED';
+    return (
+      <div className="min-h-screen bg-[#fbfbfb] text-black font-sans selection:bg-[#4a5d23] flex flex-col">
+        <Navbar currentSection={activeSection} onNavigate={navigateToSection} isLightBackground={true} />
+        <main className="flex-grow pt-40 pb-24 px-6">
+          <div className="max-w-3xl mx-auto">
+            <button
+              onClick={() => {
+                window.history.pushState({}, '', '/reservas');
+                setReservationDetailId(null);
+                setActiveSection(Section.RESERVATIONS);
+              }}
+              className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors"
+            >
+              Volver a reservas
+            </button>
+
+            <div className="mt-6 bg-white border border-gray-200 shadow-sm rounded-lg p-8">
+              <div className="text-xs uppercase tracking-widest text-gray-400 font-bold">Reserva</div>
+              <div className="mt-2 text-2xl font-black text-gray-900">{reservationDetailId}</div>
+
+              {isLoadingReservationDetail && (
+                <div className="mt-6 text-gray-600 italic">Cargando reserva...</div>
+              )}
+
+              {reservationDetailError && (
+                <div className="mt-6 border border-red-200 bg-red-50 text-red-700 p-4 text-sm">{reservationDetailError}</div>
+              )}
+
+              {reservationDetail && (
+                <div className="mt-6 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="border border-gray-200 rounded p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Estado</div>
+                      <div className="mt-1 font-bold text-gray-900">{reservationDetail.status}</div>
+                    </div>
+                    <div className="border border-gray-200 rounded p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Data / Hora</div>
+                      <div className="mt-1 font-bold text-gray-900">
+                        {reservationDetail.date} <span className="text-gray-400">|</span> {reservationDetail.time}
+                      </div>
+                    </div>
+                    <div className="border border-gray-200 rounded p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Comensais</div>
+                      <div className="mt-1 font-bold text-gray-900">{reservationDetail.partySize}</div>
+                    </div>
+                    <div className="border border-gray-200 rounded p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Creada</div>
+                      <div className="mt-1 font-bold text-gray-900">{reservationDetail.createdAt}</div>
+                    </div>
+                  </div>
+
+                  <div className="border border-gray-200 rounded p-4">
+                    <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Cliente</div>
+                    <div className="mt-2 text-gray-900 font-bold">{reservationDetail.customer?.name || '—'}</div>
+                    <div className="mt-1 text-sm text-gray-600">
+                      {reservationDetail.customer?.email || '—'}
+                      {reservationDetail.customer?.phone ? (
+                        <>
+                          <span className="text-gray-400"> · </span>
+                          {reservationDetail.customer.phone}
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="border border-gray-200 rounded p-4">
+                    <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Notas</div>
+                    <div className="mt-2 text-sm text-gray-700 italic">{reservationDetail.notes || '—'}</div>
+                  </div>
+
+                  <div className="pt-2">
+                    <div className="text-xs uppercase tracking-widest text-gray-400 font-bold">Cancelar reserva</div>
+                    <div className="text-sm text-gray-600">Indica o motivo da cancelación.</div>
+
+                    <form
+                      className="mt-4 space-y-3"
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!reservationDetailId) return;
+                        if (!canCancel) return;
+                        if (!cancelReason.trim()) {
+                          setCancelReservationMessage('O motivo é obrigatorio.');
+                          return;
+                        }
+                        try {
+                          setIsCancellingReservation(true);
+                          setCancelReservationMessage('');
+                          await backendApi.cancelReservation(reservationDetailId, cancelReason.trim());
+                          const res = await backendApi.getReservation(reservationDetailId);
+                          setReservationDetail(res);
+                          setCancelReservationMessage('Reserva cancelada correctamente.');
+                        } catch {
+                          setCancelReservationMessage('Non se puido cancelar a reserva.');
+                        } finally {
+                          setIsCancellingReservation(false);
+                        }
+                      }}
+                    >
+                      <textarea
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        placeholder="Non podo ir"
+                        className="w-full bg-white border border-gray-200 p-4 text-black focus:border-[#4a5d23] outline-none transition-colors min-h-[120px] resize-y disabled:opacity-40"
+                        disabled={!canCancel || isCancellingReservation}
+                      />
+                      <button
+                        type="submit"
+                        disabled={!canCancel || isCancellingReservation}
+                        className="w-full bg-black text-white py-4 uppercase font-black tracking-widest hover:bg-gray-800 transition-all disabled:opacity-40"
+                      >
+                        {isCancellingReservation ? 'Cancelando...' : 'Cancelar reserva'}
+                      </button>
+                      {cancelReservationMessage && (
+                        <div className="text-sm text-gray-600">{cancelReservationMessage}</div>
+                      )}
+                      {!canCancel && (
+                        <div className="text-sm text-gray-500 italic">Esta reserva xa non se pode cancelar.</div>
+                      )}
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+        <CookieBanner onNavigate={navigateToSection} />
+      </div>
     );
   }
 

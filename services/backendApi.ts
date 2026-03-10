@@ -243,6 +243,7 @@ export const backendApi = {
       `/api/v1/availability?partySize=${encodeURIComponent(String(partySize))}&limitDays=${encodeURIComponent(String(limitDays))}`,
       'GET'
     ),
+  getReservation: (id: string) => request<BackendReservationOut>(`/api/v1/reservations/${encodeURIComponent(id)}`, 'GET'),
   createReservation: (payload: { date: string; time: string; partySize: number; customer: { name: string; phone?: string; email: string }; notes?: string }) =>
     request<BackendReservationOut>('/api/v1/reservations', 'POST', payload),
   cancelReservation: (id: string, reason?: string) => request<BackendReservationOut>(`/api/v1/reservations/${encodeURIComponent(id)}/cancel`, 'POST', { reason: reason ?? null }),
