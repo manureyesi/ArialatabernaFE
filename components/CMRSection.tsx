@@ -1618,10 +1618,28 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                         </button>
                       </>
                     )}
+                    {auth && res.status === 'confirmed' && (
+                      <button
+                        onClick={async () => {
+                          if (!auth) return;
+                          const reason = window.prompt('Motivo da cancelación', 'Non podo atender a reserva') ?? '';
+                          if (!reason.trim()) return;
+                          try {
+                            await backendApi.admin.cancelReservation(auth, res.id, reason.trim());
+                            await refreshAdminReservations(auth);
+                          } catch {
+                            setAdminReservationsMessage('Non se puido cancelar a reserva.');
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 font-bold text-xs uppercase"
+                      >
+                        Cancelar
+                      </button>
+                    )}
                     {!auth && (
                       <span className="text-gray-400 text-xs">—</span>
                     )}
-                    {auth && res.status !== 'pending' && (
+                    {auth && res.status !== 'pending' && res.status !== 'confirmed' && (
                       <span className="text-gray-400 text-xs">—</span>
                     )}
                   </td>
