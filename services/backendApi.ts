@@ -86,6 +86,14 @@ export type BackendAvailabilityResponse = {
   slots: Array<{ time: string; available: boolean; reason?: string | null }>;
 };
 
+export type BackendAvailabilityRangeResponse = {
+  fromDate: string;
+  toDate: string;
+  partySize: number;
+  timezone: string;
+  days: Array<BackendAvailabilityResponse>;
+};
+
 export type BackendReservationOut = {
   id: string;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'REJECTED';
@@ -230,6 +238,11 @@ export const backendApi = {
     return request<any>(`/api/v1/schedule${suffix}`, 'GET');
   },
   getAvailability: (date: string, partySize: number) => request<BackendAvailabilityResponse>(`/api/v1/availability?date=${encodeURIComponent(date)}&partySize=${encodeURIComponent(String(partySize))}`, 'GET'),
+  getAvailabilityRange: (partySize: number, limitDays: number) =>
+    request<BackendAvailabilityRangeResponse>(
+      `/api/v1/availability?partySize=${encodeURIComponent(String(partySize))}&limitDays=${encodeURIComponent(String(limitDays))}`,
+      'GET'
+    ),
   createReservation: (payload: { date: string; time: string; partySize: number; customer: { name: string; phone?: string; email?: string }; notes?: string }) =>
     request<BackendReservationOut>('/api/v1/reservations', 'POST', payload),
   cancelReservation: (id: string, reason?: string) => request<BackendReservationOut>(`/api/v1/reservations/${encodeURIComponent(id)}/cancel`, 'POST', { reason: reason ?? null }),

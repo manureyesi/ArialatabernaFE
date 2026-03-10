@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Reservation, MenuItem, EventItem, ProjectProposal, EventCategory } from '../types';
 import { COLORS } from '../constants';
-import { backendApi, BasicAuth, BackendAdminMenuCategoryNode, BackendAdminReservationItem } from '../services/backendApi';
+import { backendApi, BasicAuth, BackendAdminMenuCategoryNode, BackendAdminReservationItem, BackendAvailabilityRangeResponse } from '../services/backendApi';
 
 interface CMRSectionProps {
   reservations: Reservation[];
@@ -42,6 +42,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [adminReservations, setAdminReservations] = useState<Array<BackendAdminReservationItem>>([]);
   const [isLoadingAdminReservations, setIsLoadingAdminReservations] = useState(false);
   const [adminReservationsMessage, setAdminReservationsMessage] = useState<string>('');
+
+  const [availabilityRange, setAvailabilityRange] = useState<BackendAvailabilityRangeResponse | null>(null);
+  const [isLoadingAvailabilityRange, setIsLoadingAvailabilityRange] = useState(false);
+  const [availabilityRangeMessage, setAvailabilityRangeMessage] = useState<string>('');
 
   const [projectContacts, setProjectContacts] = useState<
     Array<{
@@ -186,6 +190,20 @@ const CMRSection: React.FC<CMRSectionProps> = ({
     }
   };
 
+  const refreshAvailabilityRange = async () => {
+    setIsLoadingAvailabilityRange(true);
+    setAvailabilityRangeMessage('');
+    try {
+      const res = await backendApi.getAvailabilityRange(0, 30);
+      setAvailabilityRange(res || null);
+    } catch {
+      setAvailabilityRange(null);
+      setAvailabilityRangeMessage('Non se puideron cargar os slots.');
+    } finally {
+      setIsLoadingAvailabilityRange(false);
+    }
+  };
+
   type CustomerRow = {
     name: string;
     email: string;
@@ -271,6 +289,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
     if (activeTab === 'dashboard' || activeTab === 'reservations') {
       refreshAdminReservations(auth);
+    }
+
+    if (activeTab === 'reservations') {
+      refreshAvailabilityRange();
     }
 
     if (activeTab === 'menu') {
@@ -1540,6 +1562,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                   setServiceWindowMessage('');
                   await backendApi.admin.addServiceWindow(auth, { date: apiDate, start: serviceWindowStart, end: serviceWindowEnd });
                   setServiceWindowMessage('Xanela creada correctamente.');
+                  refreshAvailabilityRange();
                 } catch {
                   setServiceWindowMessage('Non se puido crear a xanela. Revisa a data/hora e as credenciais.');
                 } finally {
@@ -1592,6 +1615,56 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               {serviceWindowMessage}
             </div>
           )}
+
+          <div className="mt-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-widest text-gray-400 font-bold">Slots activos</div>
+                <div className="text-sm text-gray-600">Disponibilidade (partySize=0) nos próximos 30 días.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => refreshAvailabilityRange()}
+                disabled={isLoadingAvailabilityRange}
+                className="border border-gray-200 text-gray-700 px-4 py-2 rounded font-bold uppercase tracking-widest text-xs hover:bg-gray-50 disabled:opacity-40"
+              >
+                {isLoadingAvailabilityRange ? 'Cargando...' : 'Refrescar'}
+              </button>
+            </div>
+
+            {availabilityRangeMessage && (
+              <div className="mt-3 text-sm text-gray-600">{availabilityRangeMessage}</div>
+            )}
+
+            {!availabilityRangeMessage && !isLoadingAvailabilityRange && (
+              <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {(availabilityRange?.days || [])
+                  .map((d) => ({
+                    date: d.date,
+                    times: (d.slots || []).filter((s) => s.available).map((s) => s.time),
+                  }))
+                  .filter((d) => d.times.length > 0)
+                  .map((day) => (
+                    <div key={day.date} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="text-xs uppercase tracking-widest text-gray-500 font-bold">{day.date}</div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {day.times.map((t) => (
+                          <span key={t} className="px-2 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-700 font-bold">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                {(availabilityRange?.days || [])
+                  .map((d) => (d.slots || []).filter((s) => s.available).length)
+                  .reduce((acc, n) => acc + n, 0) === 0 && (
+                  <div className="text-sm text-gray-500 italic">Non hai slots activos nos próximos 30 días.</div>
+                )}
+              </div>
+            )}
+          </div>
 
           {(isLoadingAdminReservations || adminReservationsMessage) && (
             <div className="mt-4 text-sm text-gray-600">
