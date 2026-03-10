@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Reservation, MenuItem, EventItem, ProjectProposal, EventCategory } from '../types';
 import { COLORS } from '../constants';
-import { backendApi, BasicAuth, BackendAdminMenuCategoryNode } from '../services/backendApi';
+import { backendApi, BasicAuth, BackendAdminMenuCategoryNode, BackendAdminReservationItem } from '../services/backendApi';
 
 interface CMRSectionProps {
   reservations: Reservation[];
@@ -32,6 +32,16 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [error, setError] = useState('');
   const [auth, setAuth] = useState<BasicAuth | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'reservations' | 'customers' | 'menu' | 'events' | 'proposals' | 'config'>('dashboard');
+
+  const [serviceWindowDate, setServiceWindowDate] = useState('');
+  const [serviceWindowStart, setServiceWindowStart] = useState('13:00');
+  const [serviceWindowEnd, setServiceWindowEnd] = useState('16:00');
+  const [isCreatingServiceWindow, setIsCreatingServiceWindow] = useState(false);
+  const [serviceWindowMessage, setServiceWindowMessage] = useState<string>('');
+
+  const [adminReservations, setAdminReservations] = useState<Array<BackendAdminReservationItem>>([]);
+  const [isLoadingAdminReservations, setIsLoadingAdminReservations] = useState(false);
+  const [adminReservationsMessage, setAdminReservationsMessage] = useState<string>('');
 
   const [projectContacts, setProjectContacts] = useState<
     Array<{
@@ -141,6 +151,41 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const todayReservations = reservations.filter(r => r.date === today && r.status === 'confirmed').length;
   const newProposalsCount = proposals.filter(p => p.status === 'new').length;
 
+  const mappedAdminReservations = useMemo<Array<Reservation>>(() => {
+    return (adminReservations || []).map((r) => {
+      const mappedStatus: Reservation['status'] =
+        r.status === 'CONFIRMED' ? 'confirmed' : r.status === 'PENDING' ? 'pending' : 'cancelled';
+      return {
+        id: r.id,
+        date: r.date,
+        time: r.time,
+        guests: r.partySize,
+        name: r.customer?.name || '—',
+        email: r.customer?.email || '',
+        phone: r.customer?.phone || '',
+        observations: r.notes ?? undefined,
+        status: mappedStatus,
+        createdAt: r.createdAt,
+      };
+    });
+  }, [adminReservations]);
+
+  const reservationsForUi = auth ? mappedAdminReservations : reservations;
+
+  const refreshAdminReservations = async (nextAuth: BasicAuth) => {
+    setIsLoadingAdminReservations(true);
+    setAdminReservationsMessage('');
+    try {
+      const items = await backendApi.admin.listReservations(nextAuth, 100, 0);
+      setAdminReservations(Array.isArray(items) ? items : []);
+    } catch {
+      setAdminReservations([]);
+      setAdminReservationsMessage('Non se puideron cargar as reservas.');
+    } finally {
+      setIsLoadingAdminReservations(false);
+    }
+  };
+
   type CustomerRow = {
     name: string;
     email: string;
@@ -222,6 +267,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         .catch(() => {
           setProjectContactsStats(null);
         });
+    }
+
+    if (activeTab === 'dashboard' || activeTab === 'reservations') {
+      refreshAdminReservations(auth);
     }
 
     if (activeTab === 'menu') {
@@ -433,43 +482,16 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nextAuth = { username, password };
+    const nextAuth: BasicAuth = { username, password };
     try {
       await backendApi.admin.listConfig(nextAuth);
-      try {
-        const items = await backendApi.admin.listEvents(nextAuth);
-        setEvents(
-          items
-            .filter((it) => !!it.title)
-            .map((it) => {
-              const dt = it.dateStart ? new Date(it.dateStart) : null;
-              const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
-              const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
-              return {
-                id: it.id,
-                title: it.title,
-                date,
-                time,
-                description: it.description,
-                image: it.imageUrl || 'https://picsum.photos/800/600?grayscale',
-                category: (it.category as any) as EventItem['category'],
-                dateStart: it.dateStart,
-                dateEnd: it.dateEnd ?? null,
-                timezone: it.timezone,
-                locationName: it.locationName ?? null,
-                isPublished: it.isPublished,
-                imageUrl: it.imageUrl,
-              };
-            })
-        );
-      } catch {
-        // ignore events load errors on login
-      }
       setAuth(nextAuth);
       setIsAuthenticated(true);
       setError('');
+      refreshAdminReservations(nextAuth);
     } catch {
       setAuth(null);
+      setIsAuthenticated(false);
       setError('Credenciais incorrectas');
     }
   };
@@ -1491,35 +1513,165 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   );
 
   const renderReservationsTable = () => (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-            <tr>
-              <th className="px-6 py-4">Estado</th>
-              <th className="px-6 py-4">Data / Hora</th>
-              <th className="px-6 py-4">Cliente</th>
-              <th className="px-6 py-4">Pax</th>
-              <th className="px-6 py-4">Observacións</th>
-              <th className="px-6 py-4">Contacto</th>
-              <th className="px-6 py-4 text-right">Accións</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {reservations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((res) => (
-              <tr key={res.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider ${res.status === 'confirmed' ? 'bg-green-100 text-green-800' : res.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'}`}>{res.status === 'pending' ? 'Pendente' : res.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}</span></td>
-                <td className="px-6 py-4 text-gray-900 font-medium whitespace-nowrap">{res.date} <span className="text-gray-400">|</span> {res.time}</td>
-                <td className="px-6 py-4 text-gray-900 font-bold">{res.name}</td>
-                <td className="px-6 py-4 text-gray-900">{res.guests}</td>
-                <td className="px-6 py-4 text-gray-600 max-w-xs text-xs italic">{res.observations || '—'}</td>
-                <td className="px-6 py-4 text-gray-500"><div className="flex flex-col"><span>{res.phone}</span><span className="text-xs">{res.email}</span></div></td>
-                <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">{res.status === 'pending' && <><button onClick={() => onUpdateStatus(res.id, 'confirmed')} className="text-green-600 hover:text-green-800 font-bold text-xs uppercase">Aceptar</button><button onClick={() => onUpdateStatus(res.id, 'cancelled')} className="text-red-600 hover:text-red-800 font-bold text-xs uppercase">Rexeitar</button></>}{res.status !== 'pending' && <button onClick={() => onUpdateStatus(res.id, res.status === 'confirmed' ? 'cancelled' : 'confirmed')} className="text-gray-400 hover:text-gray-600 text-xs underline">Cambiar Estado</button>}</td>
+    <div className="space-y-4">
+      {activeTab === 'reservations' && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col lg:flex-row lg:items-end gap-4 justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-widest text-gray-400 font-bold">Xestión de horarios</div>
+              <div className="text-sm text-gray-600">Crea unha xanela de servizo para xerar slots dispoñibles (ex: 13:00-16:00).</div>
+            </div>
+
+            <form
+              className="flex flex-col sm:flex-row gap-3 sm:items-end"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!auth) return;
+                if (!serviceWindowDate || !serviceWindowStart || !serviceWindowEnd) return;
+
+                const m = /^\d{4}-\d{2}-\d{2}$/.exec(serviceWindowDate);
+                if (!m) return;
+
+                const [yyyy, mm, dd] = serviceWindowDate.split('-');
+                const apiDate = `${dd}-${mm}-${yyyy}`;
+
+                try {
+                  setIsCreatingServiceWindow(true);
+                  setServiceWindowMessage('');
+                  await backendApi.admin.addServiceWindow(auth, { date: apiDate, start: serviceWindowStart, end: serviceWindowEnd });
+                  setServiceWindowMessage('Xanela creada correctamente.');
+                } catch {
+                  setServiceWindowMessage('Non se puido crear a xanela. Revisa a data/hora e as credenciais.');
+                } finally {
+                  setIsCreatingServiceWindow(false);
+                }
+              }}
+            >
+              <div className="flex flex-col">
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Data</label>
+                <input
+                  type="date"
+                  value={serviceWindowDate}
+                  onChange={(e) => setServiceWindowDate(e.target.value)}
+                  className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Inicio</label>
+                <input
+                  type="time"
+                  value={serviceWindowStart}
+                  onChange={(e) => setServiceWindowStart(e.target.value)}
+                  className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Fin</label>
+                <input
+                  type="time"
+                  value={serviceWindowEnd}
+                  onChange={(e) => setServiceWindowEnd(e.target.value)}
+                  className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={!auth || isCreatingServiceWindow || !serviceWindowDate}
+                className="bg-[#4a5d23] text-white px-5 py-2 rounded font-bold uppercase tracking-widest text-xs hover:bg-[#5b722d] disabled:opacity-40"
+              >
+                {isCreatingServiceWindow ? 'Creando...' : 'Crear slots'}
+              </button>
+            </form>
+          </div>
+
+          {serviceWindowMessage && (
+            <div className="mt-4 text-sm text-gray-600">
+              {serviceWindowMessage}
+            </div>
+          )}
+
+          {(isLoadingAdminReservations || adminReservationsMessage) && (
+            <div className="mt-4 text-sm text-gray-600">
+              {isLoadingAdminReservations ? 'Cargando reservas...' : adminReservationsMessage}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+              <tr>
+                <th className="px-6 py-4">Estado</th>
+                <th className="px-6 py-4">Data / Hora</th>
+                <th className="px-6 py-4">Cliente</th>
+                <th className="px-6 py-4">Pax</th>
+                <th className="px-6 py-4">Observacións</th>
+                <th className="px-6 py-4">Contacto</th>
+                <th className="px-6 py-4 text-right">Accións</th>
               </tr>
-            ))}
-            {reservations.length === 0 && <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400 italic">Non hai reservas rexistradas.</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {reservationsForUi.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((res) => (
+                <tr key={res.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider ${res.status === 'confirmed' ? 'bg-green-100 text-green-800' : res.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'}`}>{res.status === 'pending' ? 'Pendente' : res.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}</span></td>
+                  <td className="px-6 py-4 text-gray-900 font-medium whitespace-nowrap">{res.date} <span className="text-gray-400">|</span> {res.time}</td>
+                  <td className="px-6 py-4 text-gray-900 font-bold">{res.name}</td>
+                  <td className="px-6 py-4 text-gray-900">{res.guests}</td>
+                  <td className="px-6 py-4 text-gray-600 max-w-xs text-xs italic">{res.observations || '—'}</td>
+                  <td className="px-6 py-4 text-gray-500"><div className="flex flex-col"><span>{res.phone}</span><span className="text-xs">{res.email}</span></div></td>
+                  <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                    {auth && res.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={async () => {
+                            if (!auth) return;
+                            try {
+                              await backendApi.admin.confirmReservation(auth, res.id);
+                              await refreshAdminReservations(auth);
+                            } catch {
+                              setAdminReservationsMessage('Non se puido confirmar a reserva.');
+                            }
+                          }}
+                          className="text-green-600 hover:text-green-800 font-bold text-xs uppercase"
+                        >
+                          Aceptar
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!auth) return;
+                            const reason = window.prompt('Motivo da cancelación', 'Non temos sitio') ?? '';
+                            if (!reason.trim()) return;
+                            try {
+                              await backendApi.admin.cancelReservation(auth, res.id, reason.trim());
+                              await refreshAdminReservations(auth);
+                            } catch {
+                              setAdminReservationsMessage('Non se puido cancelar a reserva.');
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 font-bold text-xs uppercase"
+                        >
+                          Rexeitar
+                        </button>
+                      </>
+                    )}
+                    {!auth && (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
+                    {auth && res.status !== 'pending' && (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {reservationsForUi.length === 0 && <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400 italic">Non hai reservas rexistradas.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -97,6 +97,8 @@ export type BackendReservationOut = {
   createdAt: string;
 };
 
+export type BackendAdminReservationItem = BackendReservationOut;
+
 export type BackendAdminProjectContactItem = {
   id: string;
   name: string;
@@ -317,5 +319,27 @@ export const backendApi = {
       qs.set('end', payload.end);
       return request<any>(`/api/v1/admin/schedule/window?${qs.toString()}`, 'POST', undefined, auth);
     },
+
+    listReservations: (auth: BasicAuth, limit = 100, offset = 0) =>
+      request<Array<BackendAdminReservationItem>>(
+        `/api/v1/admin/reservations?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
+        'GET',
+        undefined,
+        auth
+      ),
+    confirmReservation: (auth: BasicAuth, id: string) =>
+      request<BackendAdminReservationItem>(
+        `/api/v1/admin/reservations/${encodeURIComponent(id)}/confirm`,
+        'POST',
+        undefined,
+        auth
+      ),
+    cancelReservation: (auth: BasicAuth, id: string, reason: string) =>
+      request<BackendAdminReservationItem>(
+        `/api/v1/admin/reservations/${encodeURIComponent(id)}/cancel`,
+        'POST',
+        { reason },
+        auth
+      ),
   },
 };
