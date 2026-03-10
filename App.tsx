@@ -284,6 +284,7 @@ const App: React.FC = () => {
   const [formPhone, setFormPhone] = useState('');
   const [formObservations, setFormObservations] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
@@ -315,12 +316,35 @@ const App: React.FC = () => {
   const handleReservationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isReservationsEnabled) return;
+
+    setFormError('');
+    if (!formEmail.trim()) {
+      setFormSuccess(false);
+      setFormError('O email é obrigatorio.');
+      return;
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(formEmail.trim())) {
+      setFormSuccess(false);
+      setFormError('O email non é válido.');
+      return;
+    }
+
+    const m = /^\d{4}-\d{2}-\d{2}$/.exec(formDate);
+    if (!m) {
+      setFormSuccess(false);
+      setFormError('A data non é válida.');
+      return;
+    }
+    const [yyyy, mm, dd] = formDate.split('-');
+    const apiDate = `${dd}-${mm}-${yyyy}`;
+
     try {
       const out = await backendApi.createReservation({
-        date: formDate,
+        date: apiDate,
         time: formTime,
         partySize: formGuests,
-        customer: { name: formName, email: formEmail, phone: formPhone },
+        customer: { name: formName, email: formEmail.trim(), phone: formPhone },
         notes: formObservations,
       });
 
@@ -341,6 +365,7 @@ const App: React.FC = () => {
       setFormSuccess(true);
       setTimeout(() => {
         setFormSuccess(false);
+        setFormError('');
         setFormName('');
         setFormEmail('');
         setFormPhone('');
@@ -350,6 +375,7 @@ const App: React.FC = () => {
       }, 5000);
     } catch {
       setFormSuccess(false);
+      setFormError('Non se puido completar a reserva. Revisa os datos e téntao de novo.');
     }
   };
 
@@ -599,6 +625,11 @@ const App: React.FC = () => {
                       </div>
                       <input type="email" placeholder="Correo electrónico" required value={formEmail} onChange={e => setFormEmail(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled} />
                       <button type="submit" className="w-full bg-[#4a5d23] py-5 uppercase font-black tracking-widest hover:bg-[#5b722d] transition-all shadow-xl disabled:opacity-30 disabled:hover:bg-[#4a5d23]" disabled={!isReservationsEnabled}>Solicitar Confirmación</button>
+                      {formError && (
+                        <div className="border border-red-200 bg-red-50 text-red-700 p-4 text-sm">
+                          {formError}
+                        </div>
+                      )}
                   </form>
                   {formSuccess && <p className="mt-6 text-green-500 text-center font-bold animate-in fade-in slide-in-from-top-2">Recibimos a túa solicitude. Confirmaremos por email!</p>}
                </div>
