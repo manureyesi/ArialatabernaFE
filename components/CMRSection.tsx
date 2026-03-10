@@ -46,6 +46,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [availabilityRange, setAvailabilityRange] = useState<BackendAvailabilityRangeResponse | null>(null);
   const [isLoadingAvailabilityRange, setIsLoadingAvailabilityRange] = useState(false);
   const [availabilityRangeMessage, setAvailabilityRangeMessage] = useState<string>('');
+  const [isDeletingServiceWindowsByDate, setIsDeletingServiceWindowsByDate] = useState<string | null>(null);
 
   const [projectContacts, setProjectContacts] = useState<
     Array<{
@@ -201,6 +202,29 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       setAvailabilityRangeMessage('Non se puideron cargar os slots.');
     } finally {
       setIsLoadingAvailabilityRange(false);
+    }
+  };
+
+  const deleteServiceWindowsByDate = async (dateIso: string) => {
+    if (!auth) return;
+    const m = /^\d{4}-\d{2}-\d{2}$/.exec(dateIso);
+    if (!m) return;
+    const [yyyy, mm, dd] = dateIso.split('-');
+    const apiDate = `${dd}-${mm}-${yyyy}`;
+
+    const ok = window.confirm(`Eliminar todas as xanelas/slots do día ${dateIso}?`);
+    if (!ok) return;
+
+    setIsDeletingServiceWindowsByDate(dateIso);
+    setAvailabilityRangeMessage('');
+    try {
+      await backendApi.admin.deleteServiceWindowsByDate(auth, apiDate);
+      setAvailabilityRangeMessage('Xanelas eliminadas correctamente.');
+      refreshAvailabilityRange();
+    } catch {
+      setAvailabilityRangeMessage('Non se puideron eliminar as xanelas.');
+    } finally {
+      setIsDeletingServiceWindowsByDate(null);
     }
   };
 
@@ -1719,7 +1743,17 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                   .filter((d) => d.times.length > 0)
                   .map((day) => (
                     <div key={day.date} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                      <div className="text-xs uppercase tracking-widest text-gray-500 font-bold">{day.date}</div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="text-xs uppercase tracking-widest text-gray-500 font-bold">{day.date}</div>
+                        <button
+                          type="button"
+                          onClick={() => deleteServiceWindowsByDate(day.date)}
+                          disabled={!auth || isDeletingServiceWindowsByDate === day.date}
+                          className="text-red-600 hover:text-red-800 font-bold text-[10px] uppercase tracking-widest disabled:opacity-40"
+                        >
+                          {isDeletingServiceWindowsByDate === day.date ? 'Eliminando...' : 'Eliminar'}
+                        </button>
+                      </div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {day.times.map((t) => (
                           <span key={t} className="px-2 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-700 font-bold">

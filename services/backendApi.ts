@@ -333,6 +333,12 @@ export const backendApi = {
       return request<any>(`/api/v1/admin/schedule/window?${qs.toString()}`, 'POST', undefined, auth);
     },
 
+    deleteServiceWindowsByDate: (auth: BasicAuth, date: string) => {
+      const qs = new URLSearchParams();
+      qs.set('date', date);
+      return request<void>(`/api/v1/admin/schedule/windows?${qs.toString()}`, 'DELETE', undefined, auth);
+    },
+
     listReservations: (auth: BasicAuth, limit = 100, offset = 0) =>
       request<Array<BackendAdminReservationItem>>(
         `/api/v1/admin/reservations?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
