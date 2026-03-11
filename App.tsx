@@ -775,7 +775,7 @@ const App: React.FC = () => {
              <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                <div>
                   <h2 className="text-6xl md:text-7xl font-black mb-8 uppercase tracking-tighter leading-none">RESERVA A TÚA <span className="text-[#4a5d23]">EXPERIENCIA</span></h2>
-                  <p className="text-xl text-gray-600 italic mb-12">Para mesas de máis de 8 persoas ou eventos privados, por favor contacta directamente por teléfono.</p>
+                  <p className="text-xl text-gray-600 italic mb-12">Para mesas de máis de 6 persoas ou eventos privados, por favor contacta directamente por teléfono.</p>
                   <div className="space-y-4 text-gray-600">
                     <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Tel: {contactPhone || '+34 986 XX XX XX'}</p>
                     <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Mail: {contactMail || 'reservas@ariala.gal'}</p>
@@ -811,7 +811,7 @@ const App: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Comensais</label>
-                          <input type="number" min="1" max="8" required value={formGuests} onChange={e => setFormGuests(parseInt(e.target.value))} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation} />
+                          <input type="number" min="1" max="6" required value={formGuests} onChange={e => setFormGuests(parseInt(e.target.value))} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation} />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Nome</label>
