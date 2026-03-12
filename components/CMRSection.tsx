@@ -34,8 +34,16 @@ const CMRSection: React.FC<CMRSectionProps> = ({
   const [activeTab, setActiveTab] = useState<'dashboard' | 'reservations' | 'customers' | 'menu' | 'events' | 'proposals' | 'config'>('dashboard');
 
   const [serviceWindowDate, setServiceWindowDate] = useState('');
+  const [serviceWindowDateEnd, setServiceWindowDateEnd] = useState('');
+  const [useDateRange, setUseDateRange] = useState(false);
+
   const [serviceWindowStart, setServiceWindowStart] = useState('13:00');
   const [serviceWindowEnd, setServiceWindowEnd] = useState('16:00');
+  
+  const [serviceWindowStart2, setServiceWindowStart2] = useState('20:30');
+  const [serviceWindowEnd2, setServiceWindowEnd2] = useState('23:30');
+  const [useSecondShift, setUseSecondShift] = useState(false);
+
   const [isCreatingServiceWindow, setIsCreatingServiceWindow] = useState(false);
   const [serviceWindowMessage, setServiceWindowMessage] = useState<string>('');
 
@@ -1653,75 +1661,186 @@ const CMRSection: React.FC<CMRSectionProps> = ({
 
       {activeTab === 'reservations' && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-end gap-4 justify-between">
+          <div className="flex flex-col gap-6">
             <div>
               <div className="text-xs uppercase tracking-widest text-gray-400 font-bold">Xestión de horarios</div>
-              <div className="text-sm text-gray-600">Crea unha xanela de servizo para xerar slots dispoñibles (ex: 13:00-16:00).</div>
+              <div className="text-sm text-gray-600">Crea xanelas de servizo. Podes usar rangos de datas e dúas quendas diarias.</div>
             </div>
 
             <form
-              className="flex flex-col sm:flex-row gap-3 sm:items-end"
+              className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4"
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!auth) return;
-                if (!serviceWindowDate || !serviceWindowStart || !serviceWindowEnd) return;
-
-                const m = /^\d{4}-\d{2}-\d{2}$/.exec(serviceWindowDate);
-                if (!m) return;
-
-                const [yyyy, mm, dd] = serviceWindowDate.split('-');
-                const apiDate = `${dd}-${mm}-${yyyy}`;
+                if (!serviceWindowDate) return;
+                
+                setIsCreatingServiceWindow(true);
+                setServiceWindowMessage('Iniciando creación de slots...');
 
                 try {
-                  setIsCreatingServiceWindow(true);
-                  setServiceWindowMessage('');
-                  await backendApi.admin.addServiceWindow(auth, { date: apiDate, start: serviceWindowStart, end: serviceWindowEnd });
-                  setServiceWindowMessage('Xanela creada correctamente.');
-                  refreshAvailabilityRange();
-                } catch {
-                  setServiceWindowMessage('Non se puido crear a xanela. Revisa a data/hora e as credenciais.');
+                    const dates: string[] = [];
+                    if (useDateRange && serviceWindowDateEnd) {
+                        const start = new Date(serviceWindowDate);
+                        const end = new Date(serviceWindowDateEnd);
+                        // Prevent infinite loop if end < start
+                        if (end >= start) {
+                            let curr = start;
+                            while (curr <= end) {
+                                dates.push(curr.toISOString().split('T')[0]);
+                                curr.setDate(curr.getDate() + 1);
+                            }
+                        } else {
+                             dates.push(serviceWindowDate);
+                        }
+                    } else {
+                        dates.push(serviceWindowDate);
+                    }
+
+                    let success = 0;
+                    let fails = 0;
+
+                    for (const d of dates) {
+                        const [yyyy, mm, dd] = d.split('-');
+                        const apiDate = `${dd}-${mm}-${yyyy}`;
+
+                        // Shift 1
+                        try {
+                             await backendApi.admin.addServiceWindow(auth, { date: apiDate, start: serviceWindowStart, end: serviceWindowEnd });
+                             success++;
+                        } catch {
+                            fails++;
+                        }
+
+                        // Shift 2
+                        if (useSecondShift) {
+                            try {
+                                await backendApi.admin.addServiceWindow(auth, { date: apiDate, start: serviceWindowStart2, end: serviceWindowEnd2 });
+                                success++;
+                            } catch {
+                                fails++;
+                            }
+                        }
+                    }
+                    
+                    setServiceWindowMessage(`Proceso finalizado. Creados: ${success}, Erros: ${fails}`);
+                    refreshAvailabilityRange();
+                } catch (err) {
+                  setServiceWindowMessage('Erro crítico no proceso.');
                 } finally {
                   setIsCreatingServiceWindow(false);
                 }
               }}
             >
-              <div className="flex flex-col">
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Data</label>
-                <input
-                  type="date"
-                  value={serviceWindowDate}
-                  onChange={(e) => setServiceWindowDate(e.target.value)}
-                  className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
-                />
+              {/* Date Selection */}
+              <div className="space-y-2">
+                 <div className="flex items-center gap-2">
+                    <input 
+                        type="checkbox" 
+                        id="useDateRange" 
+                        checked={useDateRange} 
+                        onChange={(e) => setUseDateRange(e.target.checked)}
+                        className="rounded border-gray-300 text-[#4a5d23] focus:ring-[#4a5d23]"
+                    />
+                    <label htmlFor="useDateRange" className="text-xs uppercase font-bold text-gray-500 cursor-pointer">Usar Rango de Datas</label>
+                 </div>
+                 <div className="flex flex-wrap gap-4">
+                     <div className="flex flex-col">
+                        <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Data Inicio</label>
+                        <input
+                          type="date"
+                          value={serviceWindowDate}
+                          onChange={(e) => setServiceWindowDate(e.target.value)}
+                          className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                        />
+                     </div>
+                     {useDateRange && (
+                         <div className="flex flex-col">
+                            <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Data Fin</label>
+                            <input
+                              type="date"
+                              value={serviceWindowDateEnd}
+                              onChange={(e) => setServiceWindowDateEnd(e.target.value)}
+                              className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                            />
+                         </div>
+                     )}
+                 </div>
               </div>
 
-              <div className="flex flex-col">
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Inicio</label>
-                <input
-                  type="time"
-                  value={serviceWindowStart}
-                  onChange={(e) => setServiceWindowStart(e.target.value)}
-                  className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
-                />
+              <div className="h-px bg-gray-200 my-2"></div>
+
+              {/* Shifts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Shift 1 */}
+                  <div className="space-y-2">
+                      <div className="text-xs font-bold text-gray-700">Quenda 1</div>
+                      <div className="flex gap-2">
+                          <div className="flex flex-col">
+                            <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Inicio</label>
+                            <input
+                              type="time"
+                              value={serviceWindowStart}
+                              onChange={(e) => setServiceWindowStart(e.target.value)}
+                              className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Fin</label>
+                            <input
+                              type="time"
+                              value={serviceWindowEnd}
+                              onChange={(e) => setServiceWindowEnd(e.target.value)}
+                              className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                            />
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* Shift 2 */}
+                  <div className="space-y-2">
+                       <div className="flex items-center gap-2 mb-1">
+                            <input 
+                                type="checkbox" 
+                                id="useSecondShift" 
+                                checked={useSecondShift} 
+                                onChange={(e) => setUseSecondShift(e.target.checked)}
+                                className="rounded border-gray-300 text-[#4a5d23] focus:ring-[#4a5d23]"
+                            />
+                            <label htmlFor="useSecondShift" className="text-xs font-bold text-gray-700 cursor-pointer">Quenda 2</label>
+                       </div>
+                       
+                       <div className={`flex gap-2 transition-opacity ${!useSecondShift ? 'opacity-50 pointer-events-none' : ''}`}>
+                          <div className="flex flex-col">
+                            <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Inicio</label>
+                            <input
+                              type="time"
+                              value={serviceWindowStart2}
+                              onChange={(e) => setServiceWindowStart2(e.target.value)}
+                              className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Fin</label>
+                            <input
+                              type="time"
+                              value={serviceWindowEnd2}
+                              onChange={(e) => setServiceWindowEnd2(e.target.value)}
+                              className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
+                            />
+                          </div>
+                      </div>
+                  </div>
               </div>
 
-              <div className="flex flex-col">
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-bold">Fin</label>
-                <input
-                  type="time"
-                  value={serviceWindowEnd}
-                  onChange={(e) => setServiceWindowEnd(e.target.value)}
-                  className="border border-gray-200 rounded px-3 py-2 text-sm text-black bg-white"
-                />
+              <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={!auth || isCreatingServiceWindow || !serviceWindowDate}
+                    className="bg-[#4a5d23] text-white px-5 py-2 rounded font-bold uppercase tracking-widest text-xs hover:bg-[#5b722d] disabled:opacity-40"
+                  >
+                    {isCreatingServiceWindow ? 'Procesando...' : 'Xerar Slots'}
+                  </button>
               </div>
-
-              <button
-                type="submit"
-                disabled={!auth || isCreatingServiceWindow || !serviceWindowDate}
-                className="bg-[#4a5d23] text-white px-5 py-2 rounded font-bold uppercase tracking-widest text-xs hover:bg-[#5b722d] disabled:opacity-40"
-              >
-                {isCreatingServiceWindow ? 'Creando...' : 'Crear slots'}
-              </button>
             </form>
           </div>
 

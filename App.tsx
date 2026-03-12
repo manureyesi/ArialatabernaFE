@@ -777,8 +777,8 @@ const App: React.FC = () => {
                   <h2 className="text-6xl md:text-7xl font-black mb-8 uppercase tracking-tighter leading-none">RESERVA A TÚA <span className="text-[#4a5d23]">EXPERIENCIA</span></h2>
                   <p className="text-xl text-gray-600 italic mb-12">Para mesas de máis de 6 persoas ou eventos privados, por favor contacta directamente por teléfono.</p>
                   <div className="space-y-4 text-gray-600">
-                    <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Tel: {contactPhone || '+34 986 XX XX XX'}</p>
-                    <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Mail: {contactMail || 'reservas@ariala.gal'}</p>
+                    <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Tel: {contactPhone || '+34 XXX XX XX XX'}</p>
+                    <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Mail: {contactMail || 'xxxxxxxxxx'}</p>
                     <p className="flex items-center gap-4"><span className="w-8 h-[1px] bg-[#4a5d23]"></span> Zona dos Viños, A Estrada</p>
                   </div>
                </div>
