@@ -809,7 +809,14 @@ const App: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Hora</label>
-                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation || !formDate || isLoadingAvailability || availabilitySlots.length === 0}>
+                          <select required value={formTime} onChange={(e) => {
+                            const val = e.target.value;
+                            setFormTime(val);
+                            const slot = availabilitySlots.find((s) => s.time === val);
+                            if (slot && !slot.available) {
+                              window.alert(slot.reason || 'Esta hora non está dispoñible.');
+                            }
+                          }} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation || !formDate || isLoadingAvailability || availabilitySlots.length === 0}>
                               <option value="">{formDate ? (isLoadingAvailability ? 'Cargando...' : (availabilitySlots.length > 0 ? 'Escoller' : 'Non dispoñible')) : '—'}</option>
                               {availabilitySlots.map(s => <option key={s.time} value={s.time}>{s.time}</option>)}
                           </select>
