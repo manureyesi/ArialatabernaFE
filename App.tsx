@@ -345,17 +345,17 @@ const App: React.FC = () => {
   const [formError, setFormError] = useState('');
   const [isSubmittingReservation, setIsSubmittingReservation] = useState(false);
 
-  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [availabilitySlots, setAvailabilitySlots] = useState<Array<{ time: string; available: boolean; reason?: string | null }>>([]);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
 
   useEffect(() => {
     if (!isReservationsEnabled) {
-      setAvailableTimes([]);
+      setAvailabilitySlots([]);
       setFormTime('');
       return;
     }
     if (!formDate) {
-      setAvailableTimes([]);
+      setAvailabilitySlots([]);
       setFormTime('');
       return;
     }
@@ -364,10 +364,10 @@ const App: React.FC = () => {
     backendApi
       .getAvailability(formDate, formGuests)
       .then((res) => {
-        setAvailableTimes(res.slots.filter((s) => s.available).map((s) => s.time));
+        setAvailabilitySlots(res.slots);
       })
       .catch(() => {
-        setAvailableTimes([]);
+        setAvailabilitySlots([]);
       })
       .finally(() => setIsLoadingAvailability(false));
   }, [formDate, formGuests, isReservationsEnabled]);
@@ -378,6 +378,13 @@ const App: React.FC = () => {
     if (isSubmittingReservation) return;
 
     setFormError('');
+    const selectedSlot = availabilitySlots.find(s => s.time === formTime);
+    if (selectedSlot && !selectedSlot.available) {
+      setFormSuccess(false);
+      setFormError(selectedSlot.reason || 'Esta hora non está dispoñible.');
+      return;
+    }
+
     if (!formEmail.trim()) {
       setFormSuccess(false);
       setFormError('O email é obrigatorio.');
@@ -802,10 +809,17 @@ const App: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Hora</label>
-                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation || !formDate || isLoadingAvailability || availableTimes.length === 0}>
-                              <option value="">{formDate ? (isLoadingAvailability ? 'Cargando...' : (availableTimes.length > 0 ? 'Escoller' : 'Non dispoñible')) : '—'}</option>
-                              {availableTimes.map(t => <option key={t} value={t}>{t}</option>)}
+                          <select required value={formTime} onChange={e => setFormTime(e.target.value)} className="w-full bg-white border border-gray-200 p-4 text-black disabled:opacity-30 focus:border-[#4a5d23] outline-none transition-colors" disabled={!isReservationsEnabled || isSubmittingReservation || !formDate || isLoadingAvailability || availabilitySlots.length === 0}>
+                              <option value="">{formDate ? (isLoadingAvailability ? 'Cargando...' : (availabilitySlots.length > 0 ? 'Escoller' : 'Non dispoñible')) : '—'}</option>
+                              {availabilitySlots.map(s => <option key={s.time} value={s.time}>{s.time}</option>)}
                           </select>
+                          {(() => {
+                            const slot = availabilitySlots.find(s => s.time === formTime);
+                            if (slot && !slot.available && slot.reason) {
+                              return <div className="mt-2 text-red-600 text-xs font-bold uppercase tracking-wide">{slot.reason}</div>;
+                            }
+                            return null;
+                          })()}
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
