@@ -295,7 +295,7 @@ const App: React.FC = () => {
             .filter((e) => !!e.title)
             .map((e) => {
               const tz = e.timezone || 'Europe/Madrid';
-              const dt = e.dateStart ? new Date(e.dateStart) : null;
+              const dt = e.dateStart ? new Date(/[Zz+\-]\d{0,4}:?\d{0,2}$/.test(e.dateStart) ? e.dateStart : e.dateStart + 'Z') : null;
               const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
               const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
               return {

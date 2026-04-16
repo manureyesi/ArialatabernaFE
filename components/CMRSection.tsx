@@ -387,7 +387,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
               .filter((it) => !!it.title)
               .map((it) => {
                 const tz = it.timezone || 'Europe/Madrid';
-                const dt = it.dateStart ? new Date(it.dateStart) : null;
+                const dt = it.dateStart ? new Date(/[Zz+\-]\d{0,4}:?\d{0,2}$/.test(it.dateStart) ? it.dateStart : it.dateStart + 'Z') : null;
                 const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
                 const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
                 return {
@@ -819,7 +819,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           .filter((it) => !!it.title)
           .map((it) => {
             const tz = it.timezone || 'Europe/Madrid';
-            const dt = it.dateStart ? new Date(it.dateStart) : null;
+            const dt = it.dateStart ? new Date(/[Zz+\-]\d{0,4}:?\d{0,2}$/.test(it.dateStart) ? it.dateStart : it.dateStart + 'Z') : null;
             const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
             const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
             return {
@@ -869,7 +869,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           .filter((it) => !!it.title)
           .map((it) => {
             const tz = it.timezone || 'Europe/Madrid';
-            const dt = it.dateStart ? new Date(it.dateStart) : null;
+            const dt = it.dateStart ? new Date(/[Zz+\-]\d{0,4}:?\d{0,2}$/.test(it.dateStart) ? it.dateStart : it.dateStart + 'Z') : null;
             const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
             const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
             return {
@@ -909,7 +909,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
           .filter((it) => !!it.title)
           .map((it) => {
             const tz = it.timezone || 'Europe/Madrid';
-            const dt = it.dateStart ? new Date(it.dateStart) : null;
+            const dt = it.dateStart ? new Date(/[Zz+\-]\d{0,4}:?\d{0,2}$/.test(it.dateStart) ? it.dateStart : it.dateStart + 'Z') : null;
             const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
             const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
             return {

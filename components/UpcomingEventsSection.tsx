@@ -10,7 +10,8 @@ type UpcomingEventsSectionProps = {
 
 const toDateValue = (e: EventItem): number => {
   if (!e.dateStart) return Number.POSITIVE_INFINITY;
-  const t = new Date(e.dateStart).getTime();
+  const raw = e.dateStart;
+  const t = new Date(/[Zz+\-]\d{0,4}:?\d{0,2}$/.test(raw) ? raw : raw + 'Z').getTime();
   return Number.isFinite(t) ? t : Number.POSITIVE_INFINITY;
 };
 
