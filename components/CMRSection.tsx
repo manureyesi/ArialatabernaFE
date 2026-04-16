@@ -386,9 +386,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
             items
               .filter((it) => !!it.title)
               .map((it) => {
+                const tz = it.timezone || 'Europe/Madrid';
                 const dt = it.dateStart ? new Date(it.dateStart) : null;
-                const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
-                const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+                const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
+                const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
                 return {
                   id: it.id,
                   title: it.title,
@@ -797,7 +798,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
       title: newEventTitle,
       dateStart: toIso(newEventDateStart),
       dateEnd: newEventDateEnd ? toIso(newEventDateEnd) : null,
-      timezone: newEventTimezone,
+      timezone: 'Europe/Madrid',
       description: newEventDesc,
       category: newEventCat,
       imageUrl: newEventImage || '',
@@ -817,9 +818,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         items
           .filter((it) => !!it.title)
           .map((it) => {
+            const tz = it.timezone || 'Europe/Madrid';
             const dt = it.dateStart ? new Date(it.dateStart) : null;
-            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
-            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
+            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
             return {
               id: it.id,
               title: it.title,
@@ -866,9 +868,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         items
           .filter((it) => !!it.title)
           .map((it) => {
+            const tz = it.timezone || 'Europe/Madrid';
             const dt = it.dateStart ? new Date(it.dateStart) : null;
-            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
-            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
+            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
             return {
               id: it.id,
               title: it.title,
@@ -905,9 +908,10 @@ const CMRSection: React.FC<CMRSectionProps> = ({
         items
           .filter((it) => !!it.title)
           .map((it) => {
+            const tz = it.timezone || 'Europe/Madrid';
             const dt = it.dateStart ? new Date(it.dateStart) : null;
-            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
-            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+            const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
+            const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
             return {
               id: it.id,
               title: it.title,
@@ -1301,7 +1305,6 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                       <option value="Palabra dita e escrita">Palabra dita e escrita</option>
                   </select>
                   <input type="text" placeholder="Localización (opcional)" value={newEventLocationName} onChange={e => setNewEventLocationName(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
-                  <input type="text" placeholder="Timezone" value={newEventTimezone} onChange={e => setNewEventTimezone(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
                   <div className="flex flex-col gap-1 w-full">
                     <label className="text-[10px] uppercase font-bold text-gray-400">Cargar Imaxe</label>
                     <input type="file" accept="image/*" onChange={handleEventImageUpload} className="border p-1.5 rounded text-xs w-full text-black file:mr-4 file:py-1 file:px-2 file:rounded-sm file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300" />
@@ -1317,7 +1320,7 @@ const CMRSection: React.FC<CMRSectionProps> = ({
                     />
                     <label htmlFor="form-published" className="text-xs font-bold uppercase tracking-wider text-gray-700">Publicado</label>
                   </div>
-                  <input type="text" placeholder="Descrición" required value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400" />
+                  <textarea placeholder="Descrición" required value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} rows={4} className="border p-2 rounded text-sm w-full text-black placeholder-gray-400 md:col-span-2 lg:col-span-3 resize-vertical" />
                   <div className="md:col-span-2 lg:col-span-3 flex gap-2 pt-4">
                     <button type="submit" className={`flex-1 text-white p-2 rounded text-sm font-bold uppercase ${editEventId !== null ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-900 hover:bg-gray-800'}`}>{editEventId !== null ? 'Actualizar Evento' : 'Publicar Evento'}</button>
                     {editEventId !== null && <button type="button" onClick={resetEventForm} className="px-4 bg-gray-200 text-gray-700 p-2 rounded text-sm font-bold uppercase hover:bg-gray-300">Cancelar</button>}

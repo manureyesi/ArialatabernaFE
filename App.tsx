@@ -294,9 +294,10 @@ const App: React.FC = () => {
           items
             .filter((e) => !!e.title)
             .map((e) => {
+              const tz = e.timezone || 'Europe/Madrid';
               const dt = e.dateStart ? new Date(e.dateStart) : null;
-              const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }).toUpperCase() : '';
-              const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+              const date = dt ? dt.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short', timeZone: tz }).toUpperCase() : '';
+              const time = dt ? dt.toLocaleTimeString('gl-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz }) : '';
               return {
                 id: e.id,
                 title: e.title,
